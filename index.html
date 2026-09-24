@@ -138,12 +138,12 @@
                 <circle class="ring-track" cx="70" cy="70" r="56" />
                 <circle class="ring-value" cx="70" cy="70" r="56" />
               </svg>
-              <div class="ring-label"><strong>0<span>/8</span></strong><small>sessions</small></div>
+              <div class="ring-label"><strong><b id="homeSessionCount">0</b><span>/8</span></strong><small>sessions</small></div>
             </div>
             <div class="progress-stats">
-              <div><strong>00</strong><small>participation<br />points</small></div>
-              <div><strong>00</strong><small>checkpoints<br />complete</small></div>
-              <div><strong>00</strong><small>optional<br />extension</small></div>
+              <div><strong id="homePoints">00</strong><small>participation<br />points</small></div>
+              <div><strong id="homeCheckpoints">00</strong><small>checkpoints<br />complete</small></div>
+              <div><strong id="homeExtensions">00</strong><small>optional<br />extension</small></div>
             </div>
           </article>
         </div>
@@ -371,14 +371,14 @@
       <section class="page" id="me-page" aria-labelledby="me-title">
         <div class="profile-hero">
           <div class="large-avatar">MC</div>
-          <div><p class="kicker">MY PROGRESS</p><h1 id="me-title">Meihui Chen</h1><p>See your attendance, completed work, and project readiness.</p></div>
+          <div><p class="kicker">MY PROGRESS</p><h1 id="me-title"><span id="meDisplayName">Meihui Chen</span></h1><p>See your attendance, completed work, and project readiness.</p></div>
         </div>
         <div class="me-grid">
           <article class="readiness-panel">
             <p class="panel-label">PROJECT READINESS</p>
             <div class="readiness-top"><strong>Getting started</strong><span>Your progress will appear here after today’s session.</span></div>
             <div class="readiness-bars">
-              <div><span><b>Reliability</b><small>0 of 0 sessions</small></span><i><em style="width:0%"></em></i></div>
+              <div><span><b>Reliability</b><small id="meAttendanceText">0 of 0 sessions</small></span><i><em id="meAttendanceBar" style="width:0%"></em></i></div>
               <div><span><b>Core checkpoints</b><small>0 of 6 complete</small></span><i><em style="width:0%"></em></i></div>
               <div><span><b>Team contribution</b><small>No contributions yet</small></span><i><em style="width:0%"></em></i></div>
             </div>
@@ -386,8 +386,8 @@
           </article>
           <article class="points-panel">
             <p class="panel-label">PARTICIPATION</p>
-            <div class="big-number">00 <span>points</span></div>
-            <ul>
+            <div class="big-number"><b id="mePoints">00</b> <span>points</span></div>
+            <ul id="pointsHistory">
               <li><span>Check in to Session 01 today</span><strong>+2</strong></li>
             </ul>
           </article>
@@ -438,7 +438,7 @@
         <div class="code-inputs" id="codeInputs">
           <input inputmode="numeric" maxlength="1" aria-label="Digit 1" /><input inputmode="numeric" maxlength="1" aria-label="Digit 2" /><input inputmode="numeric" maxlength="1" aria-label="Digit 3" /><span></span><input inputmode="numeric" maxlength="1" aria-label="Digit 4" /><input inputmode="numeric" maxlength="1" aria-label="Digit 5" /><input inputmode="numeric" maxlength="1" aria-label="Digit 6" />
         </div>
-        <p class="code-hint">Demo code: <button id="fillDemoCode">092426</button></p>
+        <p class="code-hint" id="demoCodeHint">Preview only: <button id="fillDemoCode">092426</button></p>
         <button class="button primary wide" id="submitCode" disabled>Check in</button>
       </div>
       <div class="checkin-step success" data-step="success">
@@ -466,7 +466,7 @@
           <strong>The Challenge</strong>
           <small>Thursday, September 24 · 6:00 PM</small>
         </div>
-        <div class="checkin-live-count"><strong id="modalAttendanceNumber">5</strong><span>checked in</span></div>
+        <div class="checkin-live-count"><strong id="modalAttendanceNumber">0</strong><span>checked in</span></div>
         <div class="checkin-timer"><span>Code expires in</span><strong id="checkInTimer">15:00</strong></div>
         <div class="checkin-admin-buttons">
           <button class="button light wide" id="copyCheckInCode">Copy code</button>
@@ -478,6 +478,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
     <script defer src="firebase-config.js"></script>
     <script defer src="app.js"></script>
   </body>
