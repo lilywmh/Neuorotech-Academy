@@ -38,7 +38,7 @@
           </button>
           <p class="auth-error" id="authError" role="alert" hidden></p>
           <div class="auth-help"><span></span><small>Your role is assigned automatically after sign-in.</small><span></span></div>
-          <div class="auth-demo">
+          <div class="auth-demo" hidden>
             <p>Prototype preview</p>
             <div><button id="previewStudent">Enter as learner</button><button id="previewAdmin">Enter as admin</button></div>
           </div>
@@ -439,6 +439,7 @@
           <input inputmode="numeric" maxlength="1" aria-label="Digit 1" /><input inputmode="numeric" maxlength="1" aria-label="Digit 2" /><input inputmode="numeric" maxlength="1" aria-label="Digit 3" /><span></span><input inputmode="numeric" maxlength="1" aria-label="Digit 4" /><input inputmode="numeric" maxlength="1" aria-label="Digit 5" /><input inputmode="numeric" maxlength="1" aria-label="Digit 6" />
         </div>
         <p class="code-hint" id="demoCodeHint">Preview only: <button id="fillDemoCode">092426</button></p>
+        <p class="checkin-status" id="checkInStatus" role="alert" hidden></p>
         <button class="button primary wide" id="submitCode" disabled>Check in</button>
       </div>
       <div class="checkin-step success" data-step="success">

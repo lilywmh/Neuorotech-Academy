@@ -65,6 +65,8 @@ const adminToggle = document.getElementById("adminToggle");
 const authError = document.getElementById("authError");
 let firebaseAuth = null;
 
+if (location.protocol === "file:") document.querySelector(".auth-demo").hidden = false;
+
 function setAuthError(message = "") {
   authError.textContent = message;
   authError.hidden = !message;
@@ -303,6 +305,12 @@ const inputs = [...document.querySelectorAll(".code-inputs input")];
 const submitCode = document.getElementById("submitCode");
 const codeStep = document.querySelector('[data-step="code"]');
 const successStep = document.querySelector('[data-step="success"]');
+const checkInStatus = document.getElementById("checkInStatus");
+
+function setCheckInStatus(message = "") {
+  checkInStatus.textContent = message;
+  checkInStatus.hidden = !message;
+}
 
 function setCheckInSuccess() {
   codeStep.classList.remove("active");
@@ -315,6 +323,7 @@ function openDialog() {
   inputs.forEach((input) => { input.value = ""; });
   submitCode.disabled = true;
   submitCode.textContent = "Check in";
+  setCheckInStatus();
   document.getElementById("demoCodeHint").hidden = Boolean(currentFirebaseUser);
   dialog.showModal();
   if (!hasCheckedIn) inputs[0].focus();
@@ -326,12 +335,23 @@ dialog.addEventListener("click", (event) => { if (event.target === dialog) dialo
 
 inputs.forEach((input, index) => {
   input.addEventListener("input", () => {
+    setCheckInStatus();
     input.value = input.value.replace(/\D/g, "").slice(-1);
     if (input.value && inputs[index + 1]) inputs[index + 1].focus();
     submitCode.disabled = inputs.some((i) => !i.value);
   });
   input.addEventListener("keydown", (event) => {
     if (event.key === "Backspace" && !input.value && inputs[index - 1]) inputs[index - 1].focus();
+    if (event.key === "Enter" && !submitCode.disabled) submitCode.click();
+  });
+  input.addEventListener("paste", (event) => {
+    const digits = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, inputs.length);
+    if (digits.length < 2) return;
+    event.preventDefault();
+    digits.split("").forEach((digit, digitIndex) => { inputs[digitIndex].value = digit; });
+    inputs[Math.min(digits.length, inputs.length) - 1].focus();
+    submitCode.disabled = inputs.some((item) => !item.value);
+    setCheckInStatus();
   });
 });
 
@@ -343,7 +363,7 @@ document.getElementById("fillDemoCode").addEventListener("click", () => {
 submitCode.addEventListener("click", async () => {
   const code = inputs.map((input) => input.value).join("");
   if (!currentFirebaseUser || !firebaseDb) {
-    if (code !== CHECK_IN_CODE) { showToast(`That code isn’t active. Try ${CHECK_IN_CODE} in preview.`); return; }
+    if (code !== CHECK_IN_CODE) { setCheckInStatus(`That code isn’t active. Try ${CHECK_IN_CODE} in preview.`); return; }
     hasCheckedIn = true;
     localStorage.setItem("neurotech-checkin", SESSION_ID);
     renderLearnerProgress(true);
@@ -369,11 +389,11 @@ submitCode.addEventListener("click", async () => {
     const sessionData = sessionSnapshot.data();
     const expiresAt = sessionData?.expiresAt?.toMillis?.() || 0;
     if (!sessionSnapshot.exists || !sessionData.checkInOpen || expiresAt <= Date.now()) {
-      showToast("Check-in is not open right now.");
+      setCheckInStatus("Check-in is closed or the 15-minute code has expired. Ask the session lead to open it again.");
       return;
     }
     if (code !== sessionData.code) {
-      showToast("That code doesn’t match. Check the screen and try again.");
+      setCheckInStatus("That code doesn’t match. Check the screen and try again.");
       return;
     }
 
@@ -392,7 +412,7 @@ submitCode.addEventListener("click", async () => {
     setCheckInSuccess();
   } catch (error) {
     console.error("Check-in failed", error);
-    showToast(error.code === "permission-denied" ? "Check-in could not be verified. Ask the session lead to reopen it." : "Check-in failed. Check your connection and try again.");
+    setCheckInStatus(error.code === "permission-denied" ? "Your sign-in could not be verified. Sign out, sign in with Google again, and retry while check-in is open." : "Check-in could not save. Check your connection and try again.");
   } finally {
     submitCode.textContent = "Check in";
     submitCode.disabled = inputs.some((input) => !input.value);

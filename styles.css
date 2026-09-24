@@ -232,6 +232,7 @@ main { min-height: calc(100vh - 86px); }
 .code-inputs input { width: 48px; height: 58px; border: 1px solid var(--ink); background: var(--white); font-family: var(--serif); font-size: 28px; text-align: center; outline: none; }
 .code-inputs input:focus { box-shadow: 0 0 0 3px var(--acid); }
 .code-hint button { border: 0; background: none; text-decoration: underline; cursor: pointer; font-weight: 800; }
+.checkin-dialog .checkin-status { margin: 14px 0 -8px; padding: 10px 12px; color: #8f2724; background: #fff0ef; border-left: 4px solid var(--orange); text-align: left; line-height: 1.45; }
 #submitCode { margin-top: 20px; }
 #submitCode:disabled { opacity: .35; box-shadow: none; cursor: not-allowed; }
 .success-mark { width: 90px; height: 90px; border-radius: 50%; background: var(--acid); display: grid; place-items: center; margin: auto auto 25px; font-size: 40px; box-shadow: 8px 8px 0 var(--ink); }
