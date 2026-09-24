@@ -3,6 +3,7 @@ node_modules/
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+firepit-log.txt
 *.local
 
 # Never commit privileged Firebase credentials.

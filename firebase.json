@@ -5,8 +5,15 @@
       "firebase.json",
       ".firebaserc",
       "README.md",
+      ".git",
+      ".git/**",
+      ".firebase",
+      ".firebase/**",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "firepit-log.txt"
     ],
     "headers": [
       {
