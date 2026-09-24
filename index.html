@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#428bca" />
+    <meta name="description" content="Neurotech Academy learning portal" />
+    <title>Neurotech Academy</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-locked">
+    <div class="noise" aria-hidden="true"></div>
+
+    <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+      <div class="auth-visual">
+        <div class="auth-brand">
+          <span class="brand-mark auth-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+          <span>NEUROTECH ACADEMY</span>
+        </div>
+        <div class="auth-visual-copy">
+          <p>FALL 2026</p>
+          <h1>One signal.<br />Eight sessions.</h1>
+          <div class="auth-wave" aria-hidden="true">
+            <svg viewBox="0 0 700 130" preserveAspectRatio="none"><path d="M0 68 C28 59,43 75,68 65 S106 39,127 69 S163 97,189 64 S230 28,250 70 S290 103,316 64 S354 42,378 68 S420 86,446 64 S486 35,507 70 S550 94,573 64 S621 43,700 66" /></svg>
+          </div>
+        </div>
+        <p class="auth-caption">From raw EEG to a BCI you can explain.</p>
+      </div>
+
+      <div class="auth-panel">
+        <div class="auth-card">
+          <p class="kicker">MEMBER SIGN IN</p>
+          <h2 id="authTitle">Welcome to the Academy.</h2>
+          <p>Use the Google account connected to your membership.</p>
+          <button class="google-button" id="googleSignIn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.09-1.92 3.27-4.75 3.27-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.16v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.34-2.1V7.06H2.16A11 11 0 0 0 1 12c0 1.77.42 3.44 1.16 4.94l3.68-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.55 4.2 1.64l3.15-3.15A10.6 10.6 0 0 0 12 1a11 11 0 0 0-9.84 6.06L5.84 9.9C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
+            Continue with Google
+          </button>
+          <p class="auth-error" id="authError" role="alert" hidden></p>
+          <div class="auth-help"><span></span><small>Your role is assigned automatically after sign-in.</small><span></span></div>
+          <div class="auth-demo">
+            <p>Prototype preview</p>
+            <div><button id="previewStudent">Enter as learner</button><button id="previewAdmin">Enter as admin</button></div>
+          </div>
+          <p class="auth-note">Having trouble signing in? Contact an Academy organizer in Slack.</p>
+        </div>
+      </div>
+    </section>
+
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Neurotech Academy home">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </span>
+        <span class="brand-copy">
+          <strong>NEUROTECH</strong>
+          <small>ACADEMY · FALL 2026</small>
+        </span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        <button class="nav-link active" data-route="home">Home</button>
+        <button class="nav-link" data-route="learn">Learn</button>
+        <button class="nav-link" data-route="library">Library</button>
+        <button class="nav-link" data-route="me">Me</button>
+      </nav>
+
+      <button class="profile-button" id="profileMenuButton" aria-label="Open profile menu" aria-expanded="false">
+        <span id="profileInitials">MC</span>
+        <span class="profile-label"><span id="profileName">Meihui Chen</span><small id="profileRole">Academy member</small></span>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" /></svg>
+      </button>
+
+      <div class="profile-menu" id="profileMenu" role="menu">
+        <button data-route="me" role="menuitem">View my progress</button>
+        <button id="adminToggle" role="menuitem">Open admin dashboard</button>
+        <button id="signOutButton" role="menuitem">Sign out</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="page active" id="home-page" aria-labelledby="home-title">
+        <div class="hero-grid">
+          <div class="hero-copy reveal">
+            <div class="eyebrow"><span class="live-dot"></span> Session 01 · today</div>
+            <h1 id="home-title">Neurotech<br /><em>Academy.</em></h1>
+            <p class="hero-subtitle">Fall 2026 · Eight sessions. We’ll work through one EEG project together, from the raw signal to a simple BCI.</p>
+            <div class="hero-actions">
+              <button class="button primary" id="openCheckIn">Check in to session</button>
+              <button class="button text-button" data-route="session">View this week’s lesson <span>→</span></button>
+            </div>
+          </div>
+
+          <aside class="signal-card reveal delay-1" aria-label="Live brain signal illustration">
+            <div class="card-label"><span>LIVE SIGNAL</span><span>CH · C3</span></div>
+            <svg class="signal-wave" viewBox="0 0 620 220" preserveAspectRatio="none" aria-hidden="true">
+              <path class="grid-line" d="M0 55H620M0 110H620M0 165H620M103 0V220M206 0V220M309 0V220M412 0V220M515 0V220" />
+              <path class="wave-shadow" d="M0 117 C20 110,27 124,42 114 S63 102,79 116 S102 135,119 109 S147 73,158 116 S181 145,197 111 S226 86,240 114 S264 125,278 112 S299 92,316 117 S339 141,356 109 S382 76,397 114 S420 149,436 110 S462 86,477 113 S504 127,520 111 S542 91,559 116 S584 137,620 107" />
+              <path class="wave" d="M0 117 C20 110,27 124,42 114 S63 102,79 116 S102 135,119 109 S147 73,158 116 S181 145,197 111 S226 86,240 114 S264 125,278 112 S299 92,316 117 S339 141,356 109 S382 76,397 114 S420 149,436 110 S462 86,477 113 S504 127,520 111 S542 91,559 116 S584 137,620 107" />
+            </svg>
+            <div class="signal-readout">
+              <div><small>FREQUENCY</small><strong>10.4 <span>Hz</span></strong></div>
+              <div><small>AMPLITUDE</small><strong>24.8 <span>μV</span></strong></div>
+              <div class="signal-status"><i></i> GOOD SIGNAL</div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="dashboard-grid reveal delay-2">
+          <article class="next-card">
+            <div class="section-heading">
+              <div><span class="section-number">01</span><h2>Do this next</h2></div>
+              <span class="session-date">SEP 24 · 6:00 PM</span>
+            </div>
+            <div class="lesson-summary">
+              <div class="lesson-index">01</div>
+              <div>
+                <p class="kicker">ACT I · SENSE</p>
+                <h3>The Challenge</h3>
+                <p>See the full BCI pipeline, meet your pod, and define what we are building this term.</p>
+                <div class="lesson-meta"><span>◷ 50 min</span><span>⌁ Bring a laptop</span><span>◎ In person</span></div>
+              </div>
+            </div>
+            <div class="prep-strip">
+              <span class="check-icon">✓</span>
+              <div><strong>Before you arrive</strong><small>Bring a laptop and sign in to your Google account.</small></div>
+              <a href="#" aria-label="Open welcome slides">Open slides ↗</a>
+            </div>
+          </article>
+
+          <article class="progress-card">
+            <div class="section-heading">
+              <div><span class="section-number">02</span><h2>Your progress</h2></div>
+              <button class="mini-link" data-route="me">DETAILS</button>
+            </div>
+            <div class="ring-wrap">
+              <svg class="progress-ring" viewBox="0 0 140 140" aria-hidden="true">
+                <circle class="ring-track" cx="70" cy="70" r="56" />
+                <circle class="ring-value" cx="70" cy="70" r="56" />
+              </svg>
+              <div class="ring-label"><strong>0<span>/8</span></strong><small>sessions</small></div>
+            </div>
+            <div class="progress-stats">
+              <div><strong>00</strong><small>participation<br />points</small></div>
+              <div><strong>00</strong><small>checkpoints<br />complete</small></div>
+              <div><strong>00</strong><small>optional<br />extension</small></div>
+            </div>
+          </article>
+        </div>
+
+        <section class="journey reveal delay-3">
+          <div class="section-heading journey-heading">
+            <div><span class="section-number">03</span><h2>8-step course map</h2></div>
+            <p>Follow the steps in order. Each one builds on the last.</p>
+          </div>
+          <div class="journey-track">
+            <span class="track-progress"></span>
+            <button class="journey-stop current" data-session="1"><i>1</i><span>01</span><strong>The challenge</strong><small>SENSE</small></button>
+            <button class="journey-stop" data-session="2"><i>2</i><span>02</span><strong>Signal origins</strong><small>SENSE</small></button>
+            <button class="journey-stop" data-session="3"><i>3</i><span>03</span><strong>Meet the data</strong><small>SENSE</small></button>
+            <button class="journey-stop" data-session="4"><i>4</i><span>04</span><strong>Clean the signal</strong><small>DECODE</small></button>
+            <button class="journey-stop" data-session="5"><i>5</i><span>05</span><strong>Find patterns</strong><small>DECODE</small></button>
+            <button class="journey-stop" data-session="6"><i>6</i><span>06</span><strong>Train a model</strong><small>DECODE</small></button>
+            <button class="journey-stop" data-session="7"><i>7</i><span>07</span><strong>Build the system</strong><small>EVALUATE</small></button>
+            <button class="journey-stop" data-session="8"><i>8</i><span>08</span><strong>Showcase</strong><small>EVALUATE</small></button>
+          </div>
+        </section>
+      </section>
+
+      <section class="page" id="learn-page" aria-labelledby="learn-title">
+        <div class="page-intro">
+          <p class="kicker">WHAT YOU WILL LEARN</p>
+          <h1 id="learn-title">From signal<br />to decision.</h1>
+          <p>Go in order. In each session, learn one idea, use it in the notebook, and finish one core checkpoint. Extensions are optional.</p>
+        </div>
+        <div class="view-switch" aria-label="Choose syllabus view">
+          <button class="active" data-learn-view="outline">Course outline</button>
+          <button data-learn-view="calendar">Calendar</button>
+        </div>
+        <div class="learn-view active" id="outlineView">
+          <div class="curriculum-layout">
+          <aside class="act-rail">
+            <button class="act-filter active" data-act="all">All sessions <span>8</span></button>
+            <button class="act-filter" data-act="sense">Act I — Sense <span>3</span></button>
+            <button class="act-filter" data-act="decode">Act II — Decode <span>3</span></button>
+            <button class="act-filter" data-act="evaluate">Act III — Evaluate <span>2</span></button>
+          </aside>
+          <div class="session-list" id="sessionList"></div>
+          </div>
+        </div>
+        <div class="learn-view" id="calendarView">
+          <div class="calendar-key"><span><i class="next"></i>Today</span><span><i></i>Upcoming</span></div>
+          <div class="calendar-months">
+            <section class="calendar-month">
+              <div class="calendar-title"><h2>September 2026</h2><span>1 session</span></div>
+              <div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
+              <div class="calendar-grid calendar-days">
+                <span class="empty"></span>
+                <span class="calendar-day"><b>1</b></span><span class="calendar-day"><b>2</b></span><span class="calendar-day"><b>3</b></span><span class="calendar-day"><b>4</b></span><span class="calendar-day weekend"><b>5</b></span><span class="calendar-day weekend"><b>6</b></span>
+                <span class="calendar-day"><b>7</b></span><span class="calendar-day"><b>8</b></span><span class="calendar-day"><b>9</b></span><span class="calendar-day"><b>10</b></span><span class="calendar-day"><b>11</b></span><span class="calendar-day weekend"><b>12</b></span><span class="calendar-day weekend"><b>13</b></span>
+                <span class="calendar-day"><b>14</b></span><span class="calendar-day"><b>15</b></span><span class="calendar-day"><b>16</b></span><span class="calendar-day"><b>17</b></span><span class="calendar-day"><b>18</b></span><span class="calendar-day weekend"><b>19</b></span><span class="calendar-day weekend"><b>20</b></span>
+                <span class="calendar-day"><b>21</b></span><span class="calendar-day"><b>22</b></span><span class="calendar-day"><b>23</b></span>
+                <button class="calendar-day event current"><b>24</b><small>S01 · TODAY</small><strong>The Challenge</strong></button>
+                <span class="calendar-day"><b>25</b></span><span class="calendar-day weekend"><b>26</b></span><span class="calendar-day weekend"><b>27</b></span>
+                <span class="calendar-day"><b>28</b></span><span class="calendar-day"><b>29</b></span><span class="calendar-day"><b>30</b></span>
+              </div>
+            </section>
+            <section class="calendar-month">
+              <div class="calendar-title"><h2>October 2026</h2><span>4 sessions</span></div>
+              <div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
+              <div class="calendar-grid calendar-days">
+                <span class="empty"></span><span class="empty"></span><span class="empty"></span>
+                <button class="calendar-day event"><b>1</b><small>S02</small><strong>Signal origins</strong></button>
+                <span class="calendar-day"><b>2</b></span><span class="calendar-day weekend"><b>3</b></span><span class="calendar-day weekend"><b>4</b></span>
+                <span class="calendar-day"><b>5</b></span><span class="calendar-day"><b>6</b></span><span class="calendar-day"><b>7</b></span>
+                <span class="calendar-day"><b>8</b></span>
+                <span class="calendar-day"><b>9</b></span><span class="calendar-day weekend"><b>10</b></span><span class="calendar-day weekend"><b>11</b></span>
+                <span class="calendar-day"><b>12</b></span><span class="calendar-day"><b>13</b></span><span class="calendar-day"><b>14</b></span>
+                <button class="calendar-day event"><b>15</b><small>S03</small><strong>Meet the data</strong></button>
+                <span class="calendar-day"><b>16</b></span><span class="calendar-day weekend"><b>17</b></span><span class="calendar-day weekend"><b>18</b></span>
+                <span class="calendar-day"><b>19</b></span><span class="calendar-day"><b>20</b></span><span class="calendar-day"><b>21</b></span>
+                <button class="calendar-day event"><b>22</b><small>S04</small><strong>Clean signal</strong></button>
+                <span class="calendar-day"><b>23</b></span><span class="calendar-day weekend"><b>24</b></span><span class="calendar-day weekend"><b>25</b></span>
+                <span class="calendar-day"><b>26</b></span><span class="calendar-day"><b>27</b></span><span class="calendar-day"><b>28</b></span>
+                <button class="calendar-day event"><b>29</b><small>S05</small><strong>Find patterns</strong></button>
+                <span class="calendar-day"><b>30</b></span><span class="calendar-day weekend"><b>31</b></span>
+              </div>
+            </section>
+            <section class="calendar-month">
+              <div class="calendar-title"><h2>November 2026</h2><span>3 sessions</span></div>
+              <div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
+              <div class="calendar-grid calendar-days">
+                <span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span>
+                <span class="calendar-day weekend"><b>1</b></span>
+                <span class="calendar-day"><b>2</b></span><span class="calendar-day"><b>3</b></span><span class="calendar-day"><b>4</b></span>
+                <button class="calendar-day event"><b>5</b><small>S06</small><strong>Train model</strong></button>
+                <span class="calendar-day"><b>6</b></span><span class="calendar-day weekend"><b>7</b></span><span class="calendar-day weekend"><b>8</b></span>
+                <span class="calendar-day"><b>9</b></span><span class="calendar-day"><b>10</b></span><span class="calendar-day"><b>11</b></span>
+                <button class="calendar-day event"><b>12</b><small>S07</small><strong>Build system</strong></button>
+                <span class="calendar-day"><b>13</b></span><span class="calendar-day weekend"><b>14</b></span><span class="calendar-day weekend"><b>15</b></span>
+                <span class="calendar-day"><b>16</b></span><span class="calendar-day"><b>17</b></span><span class="calendar-day"><b>18</b></span>
+                <button class="calendar-day event"><b>19</b><small>S08</small><strong>Showcase</strong></button>
+                <span class="calendar-day"><b>20</b></span><span class="calendar-day weekend"><b>21</b></span><span class="calendar-day weekend"><b>22</b></span>
+                <span class="calendar-day"><b>23</b></span><span class="calendar-day"><b>24</b></span><span class="calendar-day"><b>25</b></span><span class="calendar-day"><b>26</b></span><span class="calendar-day"><b>27</b></span><span class="calendar-day weekend"><b>28</b></span><span class="calendar-day weekend"><b>29</b></span>
+                <span class="calendar-day"><b>30</b></span>
+              </div>
+            </section>
+          </div>
+          <p class="calendar-note"><strong>All Academy meetings:</strong> Thursdays at 6:00 PM.</p>
+        </div>
+      </section>
+
+      <section class="page session-page" id="session-page" aria-labelledby="session-title">
+        <button class="back-link" data-route="learn">← Back to course outline</button>
+
+        <header class="session-detail-hero">
+          <div class="session-detail-copy">
+            <p class="kicker">SESSION 01 · ACT I: SENSE</p>
+            <h1 id="session-title">The Challenge</h1>
+            <p class="session-lead">See how a brain signal becomes a command—and what we’ll build together this term.</p>
+            <div class="session-facts">
+              <span><small>DATE</small><strong>September 24</strong></span>
+              <span><small>TIME</small><strong>6:00–6:50 PM</strong></span>
+              <span><small>FORMAT</small><strong>In person</strong></span>
+              <span><small>BRING</small><strong>A laptop</strong></span>
+            </div>
+          </div>
+          <aside class="session-number-card" aria-hidden="true">
+            <span>SESSION</span><strong>01</strong><small>OF 08</small>
+          </aside>
+        </header>
+
+        <div class="session-detail-layout">
+          <article class="session-content">
+            <section class="question-block">
+              <span class="content-label">TODAY’S QUESTION</span>
+              <h2>How can a brain signal become a useful command?</h2>
+            </section>
+
+            <section class="content-section outcomes-section">
+              <div class="content-section-heading"><span>01</span><div><h2>What you’ll learn</h2><p>By the end of this session, you can:</p></div></div>
+              <ul class="outcome-list">
+                <li><i>1</i><span>Explain what Neurotech Academy will cover this term.</span></li>
+                <li><i>2</i><span>Identify the main stages of a brain–computer interface.</span></li>
+                <li><i>3</i><span>Describe one neurotechnology question you want to explore.</span></li>
+              </ul>
+            </section>
+
+            <section class="content-section">
+              <div class="content-section-heading"><span>02</span><div><h2>Today’s plan</h2><p>50 minutes · group activities included</p></div></div>
+              <div class="agenda-list">
+                <div class="agenda-item"><time>0–5</time><div><strong>Check in and settle down</strong><p>Enter the session code, then sit with a pod of five or six.</p></div><span>5 MIN</span></div>
+                <div class="agenda-item"><time>5–12</time><div><strong>Meet your pod</strong><p>Name, major, what brought you here, and one quick icebreaker.</p></div><span>7 MIN</span></div>
+                <div class="agenda-item"><time>12–20</time><div><strong>How the Academy works</strong><p>Roadmap, session format, checkpoints, participation, and project matching.</p></div><span>8 MIN</span></div>
+                <div class="agenda-item feature"><time>20–30</time><div><strong>The BCI challenge</strong><p>Follow the path from brain activity to EEG, data, model, and command.</p></div><span>10 MIN</span></div>
+                <div class="agenda-item"><time>30–42</time><div><strong>Build the pipeline</strong><p>Arrange the stages of a BCI and identify what could go wrong.</p></div><span>12 MIN</span></div>
+                <div class="agenda-item"><time>42–47</time><div><strong>Compare ideas</strong><p>Each pod shares one decision or question with the room.</p></div><span>5 MIN</span></div>
+                <div class="agenda-item"><time>47–50</time><div><strong>Exit ticket</strong><p>Submit what you learned, what interests you, and one open question.</p></div><span>3 MIN</span></div>
+              </div>
+            </section>
+
+            <section class="content-section">
+              <div class="content-section-heading"><span>03</span><div><h2>Materials</h2><p>Everything used during this session</p></div></div>
+              <div class="session-materials">
+                <a href="#" class="material-link"><i>▤</i><span><small>GOOGLE SLIDES</small><strong>Session 01 slides</strong></span><b>Open ↗</b></a>
+                <a href="#" class="material-link"><i>⌁</i><span><small>GROUP ACTIVITY</small><strong>BCI pipeline worksheet</strong></span><b>Open ↗</b></a>
+                <a href="#" class="material-link"><i>✓</i><span><small>GOOGLE FORM</small><strong>Session 01 exit ticket</strong></span><b>Submit ↗</b></a>
+              </div>
+            </section>
+
+            <section class="content-section checkpoint-section">
+              <div class="content-section-heading"><span>04</span><div><h2>Complete the session</h2><p>One required checkpoint</p></div></div>
+              <div class="checkpoint-card">
+                <div class="checkpoint-icon">✓</div>
+                <div><span class="content-label">CORE CHECKPOINT</span><h3>Submit the Session 01 exit ticket</h3><p>This marks Session 01 complete and records your participation.</p></div>
+                <button class="button primary session-placeholder-link">Open form ↗</button>
+              </div>
+            </section>
+
+            <section class="extension-card">
+              <div><span class="content-label">OPTIONAL · +1 POINT</span><h2>Find a real BCI</h2><p>Share one example, the signal it uses, and what it lets the user do.</p></div>
+              <button class="button light session-placeholder-link">View extension ↗</button>
+            </section>
+
+            <nav class="next-session-card">
+              <div><small>NEXT SESSION · OCTOBER 1</small><strong>Where Signals Come From</strong></div>
+              <button data-route="learn">View course outline →</button>
+            </nav>
+          </article>
+
+          <aside class="session-sidebar">
+            <div class="session-sidebar-card">
+              <span class="content-label">SESSION STATUS</span>
+              <div class="status-line"><i></i><strong>Happening today</strong></div>
+              <button class="button primary wide" id="sessionCheckIn">Check in</button>
+            </div>
+            <div class="session-sidebar-card prep-card">
+              <span class="content-label">BEFORE CLASS</span>
+              <ul>
+                <li><i>✓</i>Bring a laptop</li>
+                <li><i>✓</i>Sign in to Google</li>
+                <li><i>✓</i>No prior experience needed</li>
+              </ul>
+            </div>
+            <div class="session-sidebar-card points-card-small">
+              <span class="content-label">PARTICIPATION</span>
+              <div><strong>+2</strong><span>Attend and participate</span></div>
+              <div><strong>+1</strong><span>Optional extension</span></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="page" id="library-page" aria-labelledby="library-title">
+        <div class="page-intro compact">
+          <p class="kicker">COURSE MATERIALS</p>
+          <h1 id="library-title">Find what<br />you need.</h1>
+        </div>
+        <div class="library-toolbar">
+          <div class="search-box"><span>⌕</span><input id="resourceSearch" type="search" placeholder="Search slides, notebooks, or topics" /></div>
+          <div class="filter-pills">
+            <button class="active" data-resource-filter="all">All</button>
+            <button data-resource-filter="current">Current term</button>
+            <button data-resource-filter="past">Past materials</button>
+            <button data-resource-filter="extra">Resources</button>
+          </div>
+        </div>
+        <div class="resource-grid" id="resourceGrid"></div>
+      </section>
+
+      <section class="page" id="me-page" aria-labelledby="me-title">
+        <div class="profile-hero">
+          <div class="large-avatar">MC</div>
+          <div><p class="kicker">MY PROGRESS</p><h1 id="me-title">Meihui Chen</h1><p>See your attendance, completed work, and project readiness.</p></div>
+        </div>
+        <div class="me-grid">
+          <article class="readiness-panel">
+            <p class="panel-label">PROJECT READINESS</p>
+            <div class="readiness-top"><strong>Getting started</strong><span>Your progress will appear here after today’s session.</span></div>
+            <div class="readiness-bars">
+              <div><span><b>Reliability</b><small>0 of 0 sessions</small></span><i><em style="width:0%"></em></i></div>
+              <div><span><b>Core checkpoints</b><small>0 of 6 complete</small></span><i><em style="width:0%"></em></i></div>
+              <div><span><b>Team contribution</b><small>No contributions yet</small></span><i><em style="width:0%"></em></i></div>
+            </div>
+            <p class="readiness-note">These signals help the team understand your preparation. They are not a public ranking.</p>
+          </article>
+          <article class="points-panel">
+            <p class="panel-label">PARTICIPATION</p>
+            <div class="big-number">00 <span>points</span></div>
+            <ul>
+              <li><span>Check in to Session 01 today</span><strong>+2</strong></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="page" id="admin-page" aria-labelledby="admin-title">
+        <div class="admin-header">
+          <div><p class="kicker">ADMIN VIEW</p><h1 id="admin-title">Academy dashboard</h1><p>Thursday, September 24 · Session 01</p></div>
+          <button class="button primary" id="adminOpenCheckIn">Open check-in</button>
+        </div>
+        <div class="admin-metrics">
+          <article><small>REGISTERED MEMBERS</small><strong>60</strong><p>Before the first session</p></article>
+          <article><small>AVG. ATTENDANCE</small><strong>—</strong><p>Available after today</p></article>
+          <article><small>CHECKPOINT RATE</small><strong>—</strong><p>Available after Session 01</p></article>
+          <article><small>NEEDS FOLLOW-UP</small><strong>00</strong><p>No attendance history yet</p></article>
+        </div>
+        <div class="admin-main">
+          <article class="roster-card">
+            <div class="section-heading"><div><span class="section-number">01</span><h2>Live attendance</h2></div><span class="live-pill">● LIVE</span></div>
+            <div class="attendance-count"><strong id="attendanceNumber">0</strong><span>students checked in</span></div>
+            <div class="roster-list" id="rosterList"><p class="empty-state">Check-in has not opened yet.</p></div>
+          </article>
+          <article class="admin-actions">
+            <p class="panel-label">QUICK ACTIONS</p>
+            <button><span>＋</span><div><strong>Add a session</strong><small>Create materials and checkpoints</small></div></button>
+            <button><span>↗</span><div><strong>Post an announcement</strong><small>Copy an update for Slack</small></div></button>
+            <button><span>✓</span><div><strong>Review submissions</strong><small>Open the linked Google Sheet</small></div></button>
+            <button><span>↓</span><div><strong>Export records</strong><small>Download participation as CSV</small></div></button>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button class="active" data-route="home"><span>⌂</span>Home</button>
+      <button data-route="learn"><span>⌁</span>Learn</button>
+      <button data-route="library"><span>▤</span>Library</button>
+      <button data-route="me"><span>○</span>Me</button>
+    </nav>
+
+    <dialog class="checkin-dialog" id="checkInDialog">
+      <button class="dialog-close" id="closeCheckIn" aria-label="Close">×</button>
+      <div class="checkin-step active" data-step="code">
+        <p class="kicker">SESSION 01 · CHECK-IN</p>
+        <h2>Good to see you.</h2>
+        <p>Enter the six-digit code shown in the room.</p>
+        <div class="code-inputs" id="codeInputs">
+          <input inputmode="numeric" maxlength="1" aria-label="Digit 1" /><input inputmode="numeric" maxlength="1" aria-label="Digit 2" /><input inputmode="numeric" maxlength="1" aria-label="Digit 3" /><span></span><input inputmode="numeric" maxlength="1" aria-label="Digit 4" /><input inputmode="numeric" maxlength="1" aria-label="Digit 5" /><input inputmode="numeric" maxlength="1" aria-label="Digit 6" />
+        </div>
+        <p class="code-hint">Demo code: <button id="fillDemoCode">092426</button></p>
+        <button class="button primary wide" id="submitCode" disabled>Check in</button>
+      </div>
+      <div class="checkin-step success" data-step="success">
+        <div class="success-mark">✓</div>
+        <p class="kicker">YOU’RE CHECKED IN</p>
+        <h2>Session 01</h2>
+        <p>The Challenge · +2 participation points</p>
+        <button class="button dark wide" id="finishCheckIn">Back to Academy</button>
+      </div>
+    </dialog>
+
+    <dialog class="admin-checkin-dialog" id="adminCheckInDialog">
+      <button class="admin-dialog-close" id="closeAdminCheckIn" aria-label="Close display">×</button>
+      <div class="admin-checkin-main">
+        <div class="checkin-live-label"><i></i> CHECK-IN OPEN</div>
+        <p class="admin-session-label">NEUROTECH ACADEMY · SESSION 01</p>
+        <h2>Enter this code</h2>
+        <div class="display-code" aria-label="Check-in code 092426"><span>092</span><i></i><span>426</span></div>
+        <p class="display-instruction">Open the Academy website, tap <strong>Check in to session</strong>, and enter the code.</p>
+        <div class="display-url">neurotech.academy/check-in</div>
+      </div>
+      <aside class="admin-checkin-side">
+        <div class="checkin-side-top">
+          <span>SESSION 01</span>
+          <strong>The Challenge</strong>
+          <small>Thursday, September 24 · 6:00 PM</small>
+        </div>
+        <div class="checkin-live-count"><strong id="modalAttendanceNumber">5</strong><span>checked in</span></div>
+        <div class="checkin-timer"><span>Code expires in</span><strong id="checkInTimer">15:00</strong></div>
+        <div class="checkin-admin-buttons">
+          <button class="button light wide" id="copyCheckInCode">Copy code</button>
+          <button class="button danger wide" id="endCheckIn">End check-in</button>
+        </div>
+      </aside>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="app.js"></script>
+  </body>
+</html>
