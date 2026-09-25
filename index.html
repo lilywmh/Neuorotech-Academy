@@ -375,32 +375,22 @@
           <div class="large-avatar">MC</div>
           <div><p class="kicker">MY NEUROTECH PATH</p><h1 id="me-title"><span id="meDisplayName">Meihui Chen</span></h1><p>Collect private badges as you show up, learn, and contribute. This is encouragement—not a public ranking.</p></div>
         </div>
-        <div class="me-grid">
-          <article class="badge-panel">
-            <p class="panel-label">CURRENT BADGE</p>
-            <div class="badge-showcase">
-              <div class="badge-emblem" id="badgeEmblem"><i class="badge-orbit orbit-one"></i><i class="badge-orbit orbit-two"></i><i class="badge-node node-one"></i><i class="badge-node node-two"></i><img src="assets/neurotech-usc-logo.png" alt="" /><span id="badgeTier">STARTER</span></div>
-              <div class="badge-copy"><small>YOUR SIGNAL LEVEL</small><h2 id="badgeName">Signal Detected</h2><p id="badgeMessage">Your first Neurotech@USC activity starts the signal.</p></div>
-            </div>
-            <div class="badge-path" aria-label="Badge path">
-              <div class="active" data-badge-step="0"><i>01</i><span>Signal<br />Detected</span></div>
-              <div data-badge-step="1"><i>02</i><span>Signal<br />Scout</span></div>
-              <div data-badge-step="2"><i>03</i><span>Synapse<br />Builder</span></div>
-              <div data-badge-step="3"><i>04</i><span>BCI<br />Pioneer</span></div>
-            </div>
-            <div class="badge-next"><span id="badgeNextText">Earn 4 more points to reach Signal Scout.</span><i><em id="badgeProgressBar" style="width:0%"></em></i></div>
-            <p class="readiness-note">Only you and Academy admins can see your points. Badges celebrate participation; they do not guarantee project placement.</p>
+        <div class="codex-overview">
+          <article class="collection-card">
+            <div><p class="panel-label">MY COLLECTION</p><strong><span id="badgeCollectedCount">1</span><small>/12 badges</small></strong></div>
+            <div class="collection-next"><span>Next discovery</span><b id="badgeNextName">Neuron</b><p id="badgeNextText">Earn 2 points to unlock it.</p></div>
+            <div class="collection-track" aria-label="Badge collection progress"><i id="badgeCollectionBar" style="width:8.33%"></i></div>
           </article>
-          <article class="points-panel">
-            <p class="panel-label">SIGNAL BANK</p>
-            <div class="points-heading"><span>Participation energy</span><small>YOUR PRIVATE TOTAL</small></div>
-            <div class="big-number"><b id="mePoints">00</b> <span>points</span></div>
+          <article class="points-panel codex-points">
+            <div><p class="panel-label">DISCOVERY POINTS</p><div class="big-number"><b id="mePoints">00</b><span>pts</span></div></div>
             <div class="participation-mini"><span><b id="meSessionCount">0</b><small>sessions</small></span><span><b id="meActivityCount">0</b><small>activities</small></span></div>
-            <ul id="pointsHistory">
-              <li><span>Your Academy activities will appear here.</span><strong>—</strong></li>
-            </ul>
+            <div class="recent-points"><span>Recent activity</span><ul id="pointsHistory"><li><span>Your first activity will appear here.</span><strong>—</strong></li></ul></div>
           </article>
         </div>
+        <section class="badge-codex" aria-labelledby="badgeCodexTitle">
+          <div class="codex-heading"><div><p class="panel-label">ACHIEVEMENT CODEX</p><h2 id="badgeCodexTitle">Neurotech badge wall</h2></div><p>Tap a badge to flip it and learn what it represents.</p></div>
+          <div class="badge-wall" id="badgeWall" aria-live="polite"></div>
+        </section>
       </section>
 
       <section class="page" id="admin-page" aria-labelledby="admin-title">

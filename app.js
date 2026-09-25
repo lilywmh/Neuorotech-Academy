@@ -320,36 +320,66 @@ function renderLearnerProgress(input) {
   renderBadge(points);
 }
 
+const badgeCatalog = [
+  { name: "Human Brain", image: "human-brain.png", points: 0, field: "Foundations", info: "The brain coordinates perception, movement, memory, and behavior through networks of specialized regions." },
+  { name: "Neuron", image: "neuron.png", points: 2, field: "Foundations", info: "A neuron receives, processes, and sends information using electrical and chemical signals." },
+  { name: "EEG Headset", image: "eeg-headset.png", points: 4, field: "Sensing", info: "EEG records tiny voltage changes at the scalp to study the brain's electrical activity." },
+  { name: "Neural Implant Chip", image: "neural-implant-chip.png", points: 6, field: "Interfaces", info: "Implanted electrodes can record from or stimulate neural tissue with high spatial precision." },
+  { name: "Robotic Prosthetic Hand", image: "prosthetic-hand.png", points: 8, field: "Restoration", info: "Neural and muscle signals can help a prosthetic hand translate intent into movement." },
+  { name: "Brainwave Monitor", image: "brainwave-monitor.png", points: 10, field: "Signals", info: "A monitor turns neural recordings into traces that researchers can inspect and analyze." },
+  { name: "MRI Scanner", image: "mri-scanner.png", points: 12, field: "Imaging", info: "MRI uses magnetic fields and radio waves to create detailed images of brain anatomy." },
+  { name: "Brain Stimulation Coil", image: "brain-stimulation-coil.png", points: 15, field: "Stimulation", info: "A TMS coil uses changing magnetic fields to noninvasively influence cortical activity." },
+  { name: "VR Headset", image: "vr-headset.png", points: 18, field: "Immersion", info: "Virtual reality creates controlled environments for research, training, and rehabilitation." },
+  { name: "Robotic Exoskeleton", image: "robotic-exoskeleton.png", points: 21, field: "Mobility", info: "A powered exoskeleton supports movement and can assist rehabilitation or mobility." },
+  { name: "Optical Neural Probe", image: "optical-neural-probe.png", points: 24, field: "Neurophotonics", info: "Optical probes use light to measure or influence neural activity in targeted tissue." },
+  { name: "fNIRS Cap", image: "fnirs-cap.png", points: 28, field: "Hemodynamics", info: "fNIRS estimates cortical activity by tracking changes in oxygenated blood with near-infrared light." }
+];
+
 function renderBadge(points) {
-  const badges = [
-    { min: 0, next: 4, tier: "STARTER", name: "Signal Detected", message: "Your first Neurotech@USC activities are bringing the signal online.", className: "tier-starter" },
-    { min: 4, next: 10, tier: "BRONZE", name: "Signal Scout", message: "You are showing up, asking questions, and learning how to spot meaningful signals.", className: "tier-bronze" },
-    { min: 10, next: 20, tier: "SILVER", name: "Synapse Builder", message: "Your steady participation is helping ideas and people connect across the Academy.", className: "tier-silver" },
-    { min: 20, next: null, tier: "GOLD", name: "BCI Pioneer", message: "You have built a strong participation trail across Neurotech@USC activities.", className: "tier-gold" }
-  ];
-  const index = points >= 20 ? 3 : points >= 10 ? 2 : points >= 4 ? 1 : 0;
-  const badge = badges[index];
-  const emblem = document.getElementById("badgeEmblem");
-  emblem.classList.remove("tier-starter", "tier-bronze", "tier-silver", "tier-gold");
-  emblem.classList.add(badge.className);
-  document.getElementById("badgeTier").textContent = badge.tier;
-  document.getElementById("badgeName").textContent = badge.name;
-  document.getElementById("badgeMessage").textContent = badge.message;
-  document.querySelectorAll("[data-badge-step]").forEach((step) => {
-    step.classList.toggle("active", Number(step.dataset.badgeStep) <= index);
-  });
-  if (badge.next === null) {
-    document.getElementById("badgeNextText").textContent = "Gold signal reached. Keep exploring, contributing, and helping others.";
-    document.getElementById("badgeProgressBar").style.width = "100%";
-    return;
-  }
-  const nextBadge = badges[index + 1];
-  const remaining = badge.next - points;
-  const range = badge.next - badge.min;
-  const progress = Math.max(0, Math.min(100, ((points - badge.min) / range) * 100));
-  document.getElementById("badgeNextText").textContent = `Earn ${remaining} more point${remaining === 1 ? "" : "s"} to reach ${nextBadge.name}.`;
-  document.getElementById("badgeProgressBar").style.width = `${progress}%`;
+  const wall = document.getElementById("badgeWall");
+  if (!wall) return;
+  const unlocked = badgeCatalog.filter((badge) => points >= badge.points);
+  const nextBadge = badgeCatalog.find((badge) => points < badge.points);
+  document.getElementById("badgeCollectedCount").textContent = String(unlocked.length);
+  document.getElementById("badgeCollectionBar").style.width = `${(unlocked.length / badgeCatalog.length) * 100}%`;
+  document.getElementById("badgeNextName").textContent = nextBadge ? nextBadge.name : "Collection complete";
+  document.getElementById("badgeNextText").textContent = nextBadge
+    ? `Earn ${nextBadge.points - points} more point${nextBadge.points - points === 1 ? "" : "s"} to unlock it.`
+    : "Every badge is now in full color.";
+
+  wall.innerHTML = badgeCatalog.map((badge, index) => {
+    const isUnlocked = points >= badge.points;
+    const status = isUnlocked ? "Collected" : `${badge.points} pts`;
+    return `<button class="codex-badge${isUnlocked ? " unlocked" : " locked"}" type="button" aria-expanded="false" aria-label="${safeText(badge.name)}. ${status}. Flip for details.">
+      <span class="codex-badge-inner">
+        <span class="codex-face codex-front">
+          <span class="codex-number">${String(index + 1).padStart(2, "0")}</span>
+          <span class="codex-status">${status}</span>
+          <img src="assets/badges/${badge.image}" alt="" loading="lazy" />
+          <span class="codex-name">${safeText(badge.name)}</span>
+          <span class="codex-field">${safeText(badge.field)}</span>
+        </span>
+        <span class="codex-face codex-back">
+          <img src="assets/badges/${badge.image}" alt="" loading="lazy" />
+          <span class="codex-back-copy"><small>${safeText(badge.field)}</small><b>${safeText(badge.name)}</b><span>${safeText(badge.info)}</span></span>
+          <span class="codex-rule">${isUnlocked ? "In your collection" : `Unlocks at ${badge.points} points`}</span>
+        </span>
+      </span>
+    </button>`;
+  }).join("");
 }
+
+document.getElementById("badgeWall")?.addEventListener("click", (event) => {
+  const badge = event.target.closest(".codex-badge");
+  if (!badge) return;
+  const willOpen = !badge.classList.contains("flipped");
+  document.querySelectorAll(".codex-badge.flipped").forEach((item) => {
+    item.classList.remove("flipped");
+    item.setAttribute("aria-expanded", "false");
+  });
+  badge.classList.toggle("flipped", willOpen);
+  badge.setAttribute("aria-expanded", String(willOpen));
+});
 
 function safeText(value = "") {
   return String(value).replace(/[&<>"']/g, (character) => ({
