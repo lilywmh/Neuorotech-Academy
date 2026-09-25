@@ -220,7 +220,23 @@ function renderSessionStates() {
       adminState.className = `session-state ${state}`;
     }
     const managerCard = document.querySelector(`[data-manager-session="${session.id}"]`);
-    managerCard?.classList.toggle("featured", state === "upcoming");
+    if (managerCard) {
+      managerCard.dataset.currentState = state;
+      managerCard.classList.toggle("featured", state === "upcoming");
+      managerCard.querySelectorAll("[data-set-session]").forEach((button) => {
+        const isSelected = button.dataset.state === state;
+        button.classList.toggle("is-selected", isSelected);
+        button.setAttribute("aria-pressed", String(isSelected));
+        button.disabled = isSelected;
+      });
+      const visibility = managerCard.querySelector(".manager-visibility b");
+      if (visibility) visibility.textContent = {
+        draft: "Hidden from learners",
+        published: "Visible in the syllabus",
+        upcoming: "Featured as the next session",
+        past: "Visible in Past sessions"
+      }[state];
+    }
     const journey = document.querySelector(`[data-session="${Number(session.n)}"]`);
     if (journey) {
       journey.classList.toggle("complete", state === "past");
@@ -473,14 +489,22 @@ document.getElementById("adminSessionManager").addEventListener("click", async (
   nextStates[sessionId] = nextState;
   const session = sessions.find((item) => item.id === sessionId);
   const status = document.getElementById("sessionManagerStatus");
+  const setManagerStatus = (message, tone = "") => {
+    status.className = `manager-status${tone ? ` ${tone}` : ""}`;
+    status.innerHTML = `<i></i><span>${safeText(message)}</span>`;
+  };
   if (!currentFirebaseUser || !firebaseDb) {
     sessionStates = nextStates;
     renderSessionStates();
-    status.textContent = `Preview: Session ${session.n} is now ${nextState}.`;
+    setManagerStatus(`Preview: Session ${session.n} is now ${nextState}.`, "saved");
     return;
   }
+  const previousStates = { ...sessionStates };
+  sessionStates = nextStates;
+  renderSessionStates();
   button.disabled = true;
-  status.textContent = "Saving session status…";
+  button.classList.add("is-saving");
+  setManagerStatus("Saving session status…", "saving");
   try {
     const batch = firebaseDb.batch();
     batch.set(firebaseDb.collection("academyConfig").doc("current"), {
@@ -495,13 +519,16 @@ document.getElementById("adminSessionManager").addEventListener("click", async (
       }, { merge: true });
     }
     await batch.commit();
-    status.textContent = `Session ${session.n} is now ${nextState}. Learner views updated.`;
+    setManagerStatus(`Session ${session.n} is now ${nextState}. Learner views updated.`, "saved");
     showToast(`Session ${session.n} set to ${nextState}.`);
   } catch (error) {
     console.error("Could not update session status", error);
-    status.textContent = "Could not save. Confirm you are signed in with the admin account.";
+    sessionStates = previousStates;
+    renderSessionStates();
+    setManagerStatus("Could not save. Confirm you are signed in with the admin account.", "error");
   } finally {
-    button.disabled = false;
+    button.classList.remove("is-saving");
+    button.disabled = button.classList.contains("is-selected");
   }
 });
 

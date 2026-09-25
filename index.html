@@ -399,20 +399,35 @@
           <button class="button primary" id="adminOpenCheckIn">Open check-in</button>
         </div>
         <section class="session-manager" aria-labelledby="sessionManagerTitle">
-          <div class="manager-heading"><div><p class="panel-label">SESSION CONTROL</p><h2 id="sessionManagerTitle">What learners see</h2></div><p>Drafts stay private.</p></div>
+          <div class="manager-heading">
+            <div><p class="panel-label">SESSION CONTROL</p><h2 id="sessionManagerTitle">Publishing desk</h2></div>
+            <p>Move each session through one clear lifecycle. Changes update the learner home, syllabus, and calendar together.</p>
+          </div>
+          <div class="lifecycle-key" aria-label="Session status guide">
+            <div><i>1</i><span><b>Draft</b><small>Hidden from learners</small></span></div>
+            <div><i>2</i><span><b>Published</b><small>Visible in the syllabus</small></span></div>
+            <div><i>3</i><span><b>Upcoming</b><small>Featured as the next meeting</small></span></div>
+            <div><i>4</i><span><b>Past</b><small>Moved to the archive</small></span></div>
+          </div>
           <div class="manager-grid" id="adminSessionManager">
             <article class="manager-card" data-manager-session="session01">
-              <div><span class="manager-number">01</span><span class="session-state past" id="adminState01">PAST</span></div>
-              <h3>Fall 2026 Intro Meeting</h3><p>September 24 · 7:00 PM</p>
-              <div class="manager-actions"><button data-set-session="session01" data-state="published">Publish archive</button><button data-set-session="session01" data-state="past">Keep past</button></div>
+              <div class="manager-card-head"><span class="manager-number">01</span><span class="session-state past" id="adminState01">PAST</span></div>
+              <div class="manager-card-body">
+                <div class="manager-session-copy"><small>SEPTEMBER 24 · 7:00 PM</small><h3>Fall 2026 Intro Meeting</h3><p>Academy orientation, participation system, roadmap, and BCI foundations.</p></div>
+                <div class="manager-visibility"><small>LEARNER VIEW</small><b id="adminVisibility01">Visible in Past sessions</b></div>
+              </div>
+              <div class="manager-control-row"><span>Set status</span><div class="manager-actions" role="group" aria-label="Set Session 01 status"><button data-set-session="session01" data-state="published">Published</button><button data-set-session="session01" data-state="past">Past</button></div></div>
             </article>
             <article class="manager-card featured" data-manager-session="session02">
-              <div><span class="manager-number">02</span><span class="session-state upcoming" id="adminState02">UPCOMING</span></div>
-              <h3>Where Signals Come From</h3><p>October 1 · 7:00 PM</p>
-              <div class="manager-actions"><button data-set-session="session02" data-state="published">Publish</button><button data-set-session="session02" data-state="upcoming">Set upcoming</button><button data-set-session="session02" data-state="past">Expire</button></div>
+              <div class="manager-card-head"><span class="manager-number">02</span><span class="session-state upcoming" id="adminState02">UPCOMING</span></div>
+              <div class="manager-card-body">
+                <div class="manager-session-copy"><small>OCTOBER 1 · 7:00 PM</small><h3>Where Signals Come From</h3><p>Neurons, electrodes, and the signals that neurotechnology can actually measure.</p></div>
+                <div class="manager-visibility"><small>LEARNER VIEW</small><b id="adminVisibility02">Featured as the next session</b></div>
+              </div>
+              <div class="manager-control-row"><span>Set status</span><div class="manager-actions" role="group" aria-label="Set Session 02 status"><button data-set-session="session02" data-state="draft">Draft</button><button data-set-session="session02" data-state="published">Published</button><button data-set-session="session02" data-state="upcoming">Upcoming</button><button data-set-session="session02" data-state="past">Past</button></div></div>
             </article>
           </div>
-          <p class="manager-status" id="sessionManagerStatus" role="status">Session 02 is currently shown as the next Academy meeting.</p>
+          <p class="manager-status" id="sessionManagerStatus" role="status"><i></i><span>Session 02 is currently shown as the next Academy meeting.</span></p>
         </section>
         <div class="admin-metrics">
           <article><small>REGISTERED MEMBERS</small><strong>60</strong><p>Before the first session</p></article>
