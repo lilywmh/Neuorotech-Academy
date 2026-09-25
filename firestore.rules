@@ -11,21 +11,20 @@ service cloud.firestore {
         && request.auth.token.email == "wumeihui.lily@gmail.com";
     }
 
-    function validLearnerCheckIn(attendanceId, sessionId, sessionTitle) {
+    function validLearnerCheckIn(attendanceId) {
       return signedIn()
-        && attendanceId == sessionId + "_" + request.auth.uid
+        && attendanceId == request.resource.data.sessionId + "_" + request.auth.uid
         && request.resource.data.keys().hasOnly([
           "uid", "email", "name", "sessionId", "sessionTitle",
           "points", "checkInCode", "checkedInAt"
         ])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
-        && request.resource.data.sessionId == sessionId
-        && request.resource.data.sessionTitle == sessionTitle
-        && request.resource.data.points == 2
-        && request.resource.data.checkInCode == get(/databases/$(database)/documents/checkins/$(sessionId)).data.code
-        && get(/databases/$(database)/documents/checkins/$(sessionId)).data.checkInOpen == true
-        && get(/databases/$(database)/documents/checkins/$(sessionId)).data.expiresAt > request.time
+        && request.resource.data.sessionTitle == get(/databases/$(database)/documents/checkins/$(request.resource.data.sessionId)).data.sessionTitle
+        && request.resource.data.points == get(/databases/$(database)/documents/checkins/$(request.resource.data.sessionId)).data.points
+        && request.resource.data.checkInCode == get(/databases/$(database)/documents/checkins/$(request.resource.data.sessionId)).data.code
+        && get(/databases/$(database)/documents/checkins/$(request.resource.data.sessionId)).data.checkInOpen == true
+        && get(/databases/$(database)/documents/checkins/$(request.resource.data.sessionId)).data.expiresAt > request.time
         && request.resource.data.checkedInAt == request.time;
     }
 
@@ -37,27 +36,28 @@ service cloud.firestore {
     match /members/{memberId} {
       allow get: if signedIn() && (memberId == request.auth.uid || isAdmin());
       allow list: if isAdmin();
-      allow create: if signedIn()
+      allow create: if isAdmin() || (signedIn()
         && memberId == request.auth.uid
         && request.resource.data.keys().hasOnly([
           "uid", "email", "name", "photoURL", "role", "joinedAt", "lastSeenAt"
         ])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
-        && (request.resource.data.role == "student" || isAdmin());
-      allow update: if signedIn()
+        && request.resource.data.role == "student");
+      allow update: if isAdmin() || (signedIn()
         && memberId == request.auth.uid
         && request.resource.data.keys().hasOnly([
           "uid", "email", "name", "photoURL", "role", "joinedAt", "lastSeenAt"
         ])
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
-        && request.resource.data.role == resource.data.role;
+        && request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
     }
 
     match /sessions/{sessionId} {
-      allow read, create, update, delete: if isAdmin();
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     // Active codes are intentionally separated from learner-readable session metadata.
@@ -70,13 +70,14 @@ service cloud.firestore {
         && (attendanceId == "session01_" + request.auth.uid
           || attendanceId == "session02_" + request.auth.uid
           || resource.data.uid == request.auth.uid
+          || resource.data.email == request.auth.token.email
           || isAdmin());
       allow list: if signedIn()
-        && (resource.data.uid == request.auth.uid || isAdmin());
+        && (resource.data.uid == request.auth.uid
+          || resource.data.email == request.auth.token.email
+          || isAdmin());
 
-      allow create: if isAdmin()
-        || validLearnerCheckIn(attendanceId, "session01", "Fall 2026 Intro Meeting")
-        || validLearnerCheckIn(attendanceId, "session02", "Where Signals Come From");
+      allow create: if isAdmin() || validLearnerCheckIn(attendanceId);
 
       allow update, delete: if isAdmin();
     }

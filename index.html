@@ -67,6 +67,11 @@
         <button class="nav-link" data-route="me">Me</button>
       </nav>
 
+      <div class="role-view-switch" id="roleViewSwitch" hidden aria-label="Switch administrator view">
+        <button type="button" data-role-view="learner">Learner site</button>
+        <button type="button" class="active" data-role-view="admin">Admin</button>
+      </div>
+
       <button class="profile-button" id="profileMenuButton" aria-label="Open profile menu" aria-expanded="false">
         <span id="profileInitials">MC</span>
         <span class="profile-label"><span id="profileName">Meihui Chen</span><small id="profileRole">Academy member</small></span>
@@ -216,7 +221,7 @@
         </div>
         <div class="learn-view" id="calendarView">
           <div class="calendar-key"><span><i class="done"></i>Past</span><span><i></i>Upcoming</span></div>
-          <div class="calendar-months">
+          <div class="calendar-months" id="calendarMonths">
             <section class="calendar-month">
               <div class="calendar-title"><h2>September 2026</h2><span>1 session</span></div>
               <div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
@@ -400,13 +405,14 @@
         </div>
         <nav class="admin-view-tabs" aria-label="Admin sections">
           <button class="active" data-admin-view="overview"><span>01</span>Overview</button>
-          <button data-admin-view="roster"><span>02</span>Roster</button>
-          <button data-admin-view="points"><span>03</span>Points &amp; activities</button>
+          <button data-admin-view="sessions"><span>02</span>Sessions</button>
+          <button data-admin-view="roster"><span>03</span>Roster</button>
+          <button data-admin-view="points"><span>04</span>Points</button>
         </nav>
-        <section class="session-manager" data-admin-panel="overview" aria-labelledby="sessionManagerTitle">
+        <section class="session-manager" data-admin-panel="sessions" aria-labelledby="sessionManagerTitle" hidden>
           <div class="manager-heading">
             <div><p class="panel-label">SESSION CONTROL</p><h2 id="sessionManagerTitle">Publishing desk</h2></div>
-            <p>Move each session through one clear lifecycle. Changes update the learner home, syllabus, and calendar together.</p>
+            <div class="manager-heading-actions"><p>Move sessions through one lifecycle. Learner pages update together.</p><button class="button primary" id="addSessionButton" type="button">+ Add session</button></div>
           </div>
           <div class="lifecycle-key" aria-label="Session status guide">
             <div><i>1</i><span><b>Draft</b><small>Hidden from learners</small></span></div>
@@ -414,24 +420,7 @@
             <div><i>3</i><span><b>Upcoming</b><small>Featured as the next meeting</small></span></div>
             <div><i>4</i><span><b>Past</b><small>Moved to the archive</small></span></div>
           </div>
-          <div class="manager-grid" id="adminSessionManager">
-            <article class="manager-card" data-manager-session="session01">
-              <div class="manager-card-head"><span class="manager-number">01</span><span class="session-state past" id="adminState01">PAST</span></div>
-              <div class="manager-card-body">
-                <div class="manager-session-copy"><small>SEPTEMBER 24 · 7:00 PM</small><h3>Fall 2026 Intro Meeting</h3><p>Academy orientation, participation system, roadmap, and BCI foundations.</p></div>
-                <div class="manager-visibility"><small>LEARNER VIEW</small><b id="adminVisibility01">Visible in Past sessions</b></div>
-              </div>
-              <div class="manager-control-row"><span>Set status</span><div class="manager-actions" role="group" aria-label="Set Session 01 status"><button data-set-session="session01" data-state="published">Published</button><button data-set-session="session01" data-state="past">Past</button></div></div>
-            </article>
-            <article class="manager-card featured" data-manager-session="session02">
-              <div class="manager-card-head"><span class="manager-number">02</span><span class="session-state upcoming" id="adminState02">UPCOMING</span></div>
-              <div class="manager-card-body">
-                <div class="manager-session-copy"><small>OCTOBER 1 · 7:00 PM</small><h3>Where Signals Come From</h3><p>Neurons, electrodes, and the signals that neurotechnology can actually measure.</p></div>
-                <div class="manager-visibility"><small>LEARNER VIEW</small><b id="adminVisibility02">Featured as the next session</b></div>
-              </div>
-              <div class="manager-control-row"><span>Set status</span><div class="manager-actions" role="group" aria-label="Set Session 02 status"><button data-set-session="session02" data-state="draft">Draft</button><button data-set-session="session02" data-state="published">Published</button><button data-set-session="session02" data-state="upcoming">Upcoming</button><button data-set-session="session02" data-state="past">Past</button></div></div>
-            </article>
-          </div>
+          <div class="manager-grid" id="adminSessionManager"></div>
           <p class="manager-status" id="sessionManagerStatus" role="status"><i></i><span>Session 02 is currently shown as the next Academy meeting.</span></p>
         </section>
         <div class="admin-metrics" data-admin-panel="overview">
@@ -446,6 +435,7 @@
             <div class="member-roster-tools">
               <label class="member-search"><span aria-hidden="true">⌕</span><input id="memberRosterSearch" type="search" placeholder="Search name or email" aria-label="Search learner roster" /></label>
               <select id="memberRosterFilter" aria-label="Filter learners by status"><option value="all">All learners</option><option value="active">Active</option><option value="started">Getting started</option><option value="no-activity">No activity</option></select>
+              <button class="button primary" id="addLearnerButton" type="button">+ Add learner</button>
             </div>
           </div>
           <div class="member-roster-table-wrap">
@@ -488,12 +478,13 @@
             <div class="roster-list" id="rosterList"><p class="empty-state">Check-in has not opened yet.</p></div>
           </article>
           <article class="admin-actions">
-            <p class="panel-label">ADMIN WORKFLOW</p>
-            <button id="createSessionAction" disabled><span>＋</span><div><strong>Create a new session</strong><small>Coming next: add title, date, description, slides, and points</small></div><b>PLANNED</b></button>
-            <button id="importPointsAction" disabled><span>⇅</span><div><strong>Import participation points</strong><small>Coming next: map a Google Form response sheet into member points</small></div><b>PLANNED</b></button>
+            <p class="panel-label">QUICK ACTIONS</p>
+            <button id="createSessionAction"><span>＋</span><div><strong>Create a new session</strong><small>Add the meeting, materials, time, and initial visibility</small></div><b>SESSIONS</b></button>
+            <button id="addLearnerAction"><span>＋</span><div><strong>Add a learner</strong><small>Enroll by name and Google account email</small></div><b>ROSTER</b></button>
+            <button id="importPointsAction"><span>⇅</span><div><strong>Import participation points</strong><small>Match a Google Sheets CSV to learner emails</small></div><b>POINTS</b></button>
             <button id="copyAcademyLink"><span>↗</span><div><strong>Copy learner website</strong><small>Share the Academy login link in Slack or on a slide</small></div></button>
-            <button id="exportAttendance"><span>↓</span><div><strong>Export this attendance</strong><small>Download the current Session 02 check-in list as CSV</small></div></button>
-            <p class="admin-workflow-note">Google Drive is only where your slides and Forms live. The Academy website stores sessions, check-ins, and point records in Firestore.</p>
+            <button id="exportAttendance"><span>↓</span><div><strong>Export this attendance</strong><small>Download the current upcoming session as CSV</small></div></button>
+            <p class="admin-workflow-note">Use the four tabs above for full management. Quick actions are shortcuts, not duplicate tools.</p>
           </article>
         </div>
       </section>
@@ -509,7 +500,7 @@
     <dialog class="checkin-dialog" id="checkInDialog">
       <button class="dialog-close" id="closeCheckIn" aria-label="Close">×</button>
       <div class="checkin-step active" data-step="code">
-        <p class="kicker">SESSION 02 · CHECK-IN</p>
+        <p class="kicker" id="learnerCheckInLabel">SESSION 02 · CHECK-IN</p>
         <h2>Good to see you.</h2>
         <p>Enter the six-digit code shown in the room.</p>
         <div class="code-inputs" id="codeInputs">
@@ -522,8 +513,8 @@
       <div class="checkin-step success" data-step="success">
         <div class="success-mark">✓</div>
         <p class="kicker">YOU’RE CHECKED IN</p>
-        <h2>Session 02</h2>
-        <p>Where Signals Come From · +2 participation points</p>
+        <h2 id="checkInSuccessTitle">Session 02</h2>
+        <p><span id="checkInSuccessSession">Where Signals Come From</span> · +2 participation points</p>
         <button class="button dark wide" id="finishCheckIn">Back to Academy</button>
       </div>
     </dialog>
@@ -532,11 +523,11 @@
       <button class="admin-dialog-close" id="closeAdminCheckIn" aria-label="Close display">×</button>
       <div class="admin-checkin-main">
         <div class="checkin-live-label"><i></i><span id="checkInLiveStatus">CHECK-IN OPEN</span></div>
-        <p class="admin-session-label">NEUROTECH@USC ACADEMY · SESSION 02</p>
+        <p class="admin-session-label">NEUROTECH@USC ACADEMY · <span id="adminCheckInSessionLabel">SESSION 02</span></p>
         <h2>Scan to check in</h2>
         <div class="checkin-display-grid">
           <div class="checkin-qr-card">
-            <div class="checkin-qr" id="adminCheckInQr" aria-label="QR code linking to Session 02 check-in"><span>Generating QR…</span></div>
+            <div class="checkin-qr" id="adminCheckInQr" aria-label="QR code linking to the current session check-in"><span>Generating QR…</span></div>
             <strong>SCAN WITH YOUR CAMERA</strong>
           </div>
           <div class="backup-code-block">
@@ -549,9 +540,9 @@
       </div>
       <aside class="admin-checkin-side">
         <div class="checkin-side-top">
-          <span>SESSION 02</span>
-          <strong>Where Signals Come From</strong>
-          <small>Thursday, October 1 · 7:00 PM</small>
+          <span id="adminCheckInSideLabel">SESSION 02</span>
+          <strong id="adminCheckInSideTitle">Where Signals Come From</strong>
+          <small id="adminCheckInSideDate">Thursday, October 1 · 7:00 PM</small>
         </div>
         <div class="checkin-live-count"><strong id="modalAttendanceNumber">0</strong><span>checked in</span></div>
         <div class="checkin-timer"><span>Code expires in</span><strong id="checkInTimer">15:00</strong></div>
@@ -568,6 +559,18 @@
       <div class="member-detail-stats"><span><b id="memberDetailSessions">0</b><small>Sessions</small></span><span><b id="memberDetailPoints">0</b><small>Points</small></span><span><b id="memberDetailBadges">1</b><small>Badges</small></span></div>
       <div class="member-detail-section"><small>STATUS</small><strong id="memberDetailStatus">No activity</strong></div>
       <div class="member-detail-section"><small>ACTIVITY HISTORY</small><div id="memberDetailActivity"><p>No recorded activity yet.</p></div></div>
+    </dialog>
+
+    <dialog class="admin-form-dialog" id="addLearnerDialog">
+      <button class="dialog-close" data-close-admin-form="addLearnerDialog" aria-label="Close">×</button>
+      <p class="panel-label">ROSTER</p><h2>Add a learner</h2><p>Use the same Google account email they will use to sign in.</p>
+      <form id="addLearnerForm"><label>Full name<input id="newLearnerName" required autocomplete="name" /></label><label>Email<input id="newLearnerEmail" type="email" required autocomplete="email" placeholder="student@usc.edu" /></label><button class="button primary wide" type="submit">Add to roster</button><p class="workspace-status" id="addLearnerStatus" role="status"></p></form>
+    </dialog>
+
+    <dialog class="admin-form-dialog session-form-dialog" id="addSessionDialog">
+      <button class="dialog-close" data-close-admin-form="addSessionDialog" aria-label="Close">×</button>
+      <p class="panel-label">CURRICULUM</p><h2>Add a session</h2><p>Create it as a draft, then publish when the details are ready.</p>
+      <form id="addSessionForm"><label>Session title<input id="newSessionTitle" required /></label><div class="form-split"><label>Date<input id="newSessionDate" type="date" required /></label><label>Start time<input id="newSessionTime" type="time" value="19:00" required /></label></div><label>Description<textarea id="newSessionDescription" rows="3" required></textarea></label><label>Slides or Drive link <input id="newSessionLink" type="url" placeholder="https://drive.google.com/…" /></label><button class="button primary wide" type="submit">Create draft session</button><p class="workspace-status" id="addSessionStatus" role="status"></p></form>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

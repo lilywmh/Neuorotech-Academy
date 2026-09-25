@@ -27,6 +27,7 @@ let unsubscribeSession = null;
 let unsubscribeAcademyConfig = null;
 let unsubscribeMembers = null;
 let unsubscribeAllAttendance = null;
+let unsubscribeCurriculumSessions = null;
 let hasCheckedIn = false;
 let liveAttendanceCount = 0;
 let activeCheckInCode = "";
@@ -39,15 +40,18 @@ let memberRosterFilter = "all";
 let pendingCsvRows = [];
 let currentAdminView = "overview";
 let pendingCheckInCode = (new URLSearchParams(location.search).get("checkin") || "").replace(/\D/g, "").slice(0, 6);
+let pendingCheckInSession = (new URLSearchParams(location.search).get("session") || "").replace(/[^a-zA-Z0-9_-]/g, "");
 const PREVIEW_CHECK_IN_CODE = "092426";
-const SESSION_ID = "session02";
-const SESSION_TITLE = "Where Signals Come From";
+let activeSessionId = "session02";
+let activeSessionTitle = "Where Signals Come From";
+let activeSessionNumber = "02";
+let subscribedAdminSessionId = "";
 const DEFAULT_SESSION_STATES = { session01: "past", session02: "upcoming" };
 let sessionStates = { ...DEFAULT_SESSION_STATES };
 let sessionStateUpdatedAt = {};
 let sessionClockTimer = null;
 
-function getEffectiveSessionState(session, requestedState = sessionStates[session.id], now = Date.now()) {
+function getEffectiveSessionState(session, requestedState = sessionStates[session.id] ?? session.state ?? "draft", now = Date.now()) {
   const startsAt = new Date(session.startsAt).getTime();
   const endsAt = new Date(session.endsAt).getTime();
   if (requestedState === "draft") return "draft";
@@ -75,6 +79,9 @@ function navigate(route) {
     route = "home";
     if (currentUserRole) showToast("This page is available to Academy admins only.");
   }
+  const isAdminRoute = currentUserRole === "admin" && route === "admin";
+  document.body.classList.toggle("admin-mode", isAdminRoute);
+  document.querySelectorAll("[data-role-view]").forEach((button) => button.classList.toggle("active", button.dataset.roleView === (isAdminRoute ? "admin" : "learner")));
   pages.forEach((page) => page.classList.toggle("active", page.id === `${route}-page`));
   const navRoute = route === "session" ? "learn" : route;
   routeButtons.forEach((button) => {
@@ -94,6 +101,7 @@ profileButton.addEventListener("click", (event) => {
 });
 document.addEventListener("click", () => { profileMenu.classList.remove("open"); profileButton.setAttribute("aria-expanded", "false"); });
 document.getElementById("adminToggle").addEventListener("click", () => navigate("admin"));
+document.querySelectorAll("[data-role-view]").forEach((button) => button.addEventListener("click", () => navigate(button.dataset.roleView === "admin" ? "admin" : "home")));
 document.getElementById("contactTeamButton").addEventListener("click", () => {
   navigate("home");
   setTimeout(() => document.getElementById("contact").scrollIntoView({ behavior: "smooth", block: "start" }), 220);
@@ -113,12 +121,15 @@ function setAuthError(message = "") {
 
 function completeSignIn(role, destination = role === "admin" ? "admin" : "home", user = null, persistDemo = false) {
   currentUserRole = role;
-  document.body.classList.toggle("admin-mode", role === "admin");
   if (persistDemo) localStorage.setItem("neurotech-auth-demo", role);
   authScreen.hidden = true;
   document.body.classList.remove("auth-locked");
   adminToggle.hidden = role !== "admin";
-  document.getElementById("profileProgressButton").hidden = role === "admin";
+  document.getElementById("roleViewSwitch").hidden = role !== "admin";
+  const progressButton = document.getElementById("profileProgressButton");
+  progressButton.hidden = false;
+  progressButton.dataset.route = role === "admin" ? "home" : "me";
+  progressButton.textContent = role === "admin" ? "View learner site" : "View my progress";
   document.getElementById("profileRole").textContent = role === "admin" ? "Academy admin" : "Academy member";
   if (user) {
     const displayName = user.displayName || user.email?.split("@")[0] || "Academy member";
@@ -132,7 +143,7 @@ function completeSignIn(role, destination = role === "admin" ? "admin" : "home",
     }
   }
   if (persistDemo && role === "student") {
-    hasCheckedIn = localStorage.getItem("neurotech-checkin") === SESSION_ID;
+    hasCheckedIn = localStorage.getItem("neurotech-checkin") === activeSessionId;
     renderLearnerProgress(hasCheckedIn);
   }
   if (persistDemo && role === "admin") {
@@ -179,12 +190,14 @@ function showSignedOut() {
   unsubscribeAcademyConfig?.();
   unsubscribeMembers?.();
   unsubscribeAllAttendance?.();
+  unsubscribeCurriculumSessions?.();
   unsubscribeAttendance = null;
   unsubscribeRoster = null;
   unsubscribeSession = null;
   unsubscribeAcademyConfig = null;
   unsubscribeMembers = null;
   unsubscribeAllAttendance = null;
+  unsubscribeCurriculumSessions = null;
   currentFirebaseUser = null;
   hasCheckedIn = false;
   currentUserRole = null;
@@ -194,6 +207,7 @@ function showSignedOut() {
   authScreen.hidden = false;
   document.body.classList.add("auth-locked");
   adminToggle.hidden = true;
+  document.getElementById("roleViewSwitch").hidden = true;
   document.getElementById("profileProgressButton").hidden = false;
   profileMenu.classList.remove("open");
   history.replaceState(null, "", "#home");
@@ -214,7 +228,7 @@ function initializeFirebaseAuth(destination = "home") {
     const email = (user.email || "").toLowerCase();
     const role = (window.NEUROTECH_ADMIN_EMAILS || []).includes(email) ? "admin" : "student";
     currentFirebaseUser = user;
-    completeSignIn(role, destination, user);
+    completeSignIn(role, role === "admin" ? "admin" : destination, user);
     upsertMemberProfile(user, role);
     startLiveData(role, user);
     maybeOpenQrCheckIn(role);
@@ -259,12 +273,54 @@ function renderSessions() {
   list.innerHTML = visibleSessions.map((s) => {
     const state = sessionStates[s.id] || s.state;
     const stateLabel = state === "past" ? "Past" : state === "upcoming" ? "Upcoming" : "Published";
+    const actionLabel = s.n === "01" ? "Open →" : s.url ? "Materials ↗" : "Details soon";
     return `
     <article class="session-row">
-      <span class="num">${s.n}</span>
-      <div><small class="session-step">SESSION ${s.n}</small><h3>${s.title}</h3><p>${s.desc}</p></div>
-      <span class="status ${state === "past" ? "done" : state === "upcoming" ? "now" : ""}">${stateLabel} · ${s.date} · ${s.time}</span>
-      <button class="session-action ${s.n === "02" ? "locked" : ""}" data-session-action="${s.n}">${s.n === "01" ? "Open →" : "Details soon"}</button>
+      <span class="num">${safeText(s.n)}</span>
+      <div><small class="session-step">SESSION ${safeText(s.n)}</small><h3>${safeText(s.title)}</h3><p>${safeText(s.desc)}</p></div>
+      <span class="status ${state === "past" ? "done" : state === "upcoming" ? "now" : ""}">${stateLabel} · ${safeText(s.date)} · ${safeText(s.time)}</span>
+      <button class="session-action ${!s.url && s.n !== "01" ? "locked" : ""}" data-session-action="${safeText(s.n)}">${actionLabel}</button>
+    </article>`;
+  }).join("");
+}
+
+function renderCalendar() {
+  const container = document.getElementById("calendarMonths");
+  if (!container) return;
+  const visible = sessions.filter((session) => session.state !== "draft");
+  const groups = new Map();
+  visible.forEach((session) => {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: ACADEMY_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(session.startsAt)).map((part) => [part.type, part.value]));
+    const key = `${parts.year}-${parts.month}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ ...session, calendarDay: Number(parts.day) });
+  });
+  container.innerHTML = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([key, monthSessions]) => {
+    const [year, month] = key.split("-").map(Number);
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const firstOffset = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+    const byDay = new Map(monthSessions.map((session) => [session.calendarDay, session]));
+    const cells = Array.from({ length: firstOffset }, () => '<span class="empty"></span>');
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const session = byDay.get(day);
+      if (session) cells.push(`<button class="calendar-day event ${session.state === "past" ? "complete" : session.state === "upcoming" ? "current" : ""}" data-calendar-session="${safeText(session.n)}"><b>${day}</b><small>S${safeText(session.n)} · ${session.state.toUpperCase()}</small><strong>${safeText(session.title)}</strong></button>`);
+      else cells.push(`<span class="calendar-day${[0, 6].includes(new Date(Date.UTC(year, month - 1, day)).getUTCDay()) ? " weekend" : ""}"><b>${day}</b></span>`);
+    }
+    const monthTitle = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(year, month - 1, 1)));
+    return `<section class="calendar-month"><div class="calendar-title"><h2>${monthTitle}</h2><span>${monthSessions.length} session${monthSessions.length === 1 ? "" : "s"}</span></div><div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div><div class="calendar-grid calendar-days">${cells.join("")}</div></section>`;
+  }).join("") || '<p class="empty-state">Published sessions will appear on the calendar.</p>';
+}
+
+function renderAdminSessionManager() {
+  const manager = document.getElementById("adminSessionManager");
+  if (!manager) return;
+  const visibilityLabel = { draft: "Hidden from learners", published: "Visible in the syllabus", upcoming: "Featured as the next session", past: "Visible in Past sessions" };
+  manager.innerHTML = [...sessions].sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt)).map((session) => {
+    const state = session.state || sessionStates[session.id] || "draft";
+    return `<article class="manager-card${state === "upcoming" ? " featured" : ""}" data-manager-session="${safeText(session.id)}">
+      <div class="manager-card-head"><span class="manager-number">${safeText(session.n)}</span><span class="session-state ${state}" id="adminState${safeText(session.n)}">${state.toUpperCase()}</span></div>
+      <div class="manager-card-body"><div class="manager-session-copy"><small>${safeText(session.date.toUpperCase())} · ${safeText(session.time)}</small><h3>${safeText(session.title)}</h3><p>${safeText(session.desc)}</p></div><div class="manager-visibility"><small>LEARNER VIEW</small><b>${visibilityLabel[state]}</b></div></div>
+      <div class="manager-control-row"><span>Set status</span><div class="manager-actions" role="group" aria-label="Set Session ${safeText(session.n)} status"><button data-set-session="${safeText(session.id)}" data-state="draft">Draft</button><button data-set-session="${safeText(session.id)}" data-state="published">Published</button><button data-set-session="${safeText(session.id)}" data-state="upcoming">Upcoming</button><button data-set-session="${safeText(session.id)}" data-state="past">Past</button></div></div>
     </article>`;
   }).join("");
 }
@@ -272,6 +328,8 @@ function renderSessions() {
 function renderSessionStates() {
   sessions.forEach((session) => { session.state = getEffectiveSessionState(session); });
   renderSessions();
+  renderCalendar();
+  renderAdminSessionManager();
 
   const visibleSessions = sessions.filter((session) => session.state !== "draft");
   const stateCounts = visibleSessions.reduce((counts, session) => {
@@ -314,13 +372,19 @@ function renderSessionStates() {
     document.getElementById("homePrepText").textContent = isPast ? "Review the slides and session materials whenever you need them." : "Bring a laptop. Session materials will appear here when published.";
     document.getElementById("homePrepLink").textContent = isPast ? "Review materials →" : "Course outline →";
   }
-  const sessionTwoIsUpcoming = sessions.find((session) => session.id === SESSION_ID)?.state === "upcoming";
+  const checkInSession = sessions.find((session) => session.state === "upcoming");
+  if (checkInSession) {
+    activeSessionId = checkInSession.id;
+    activeSessionTitle = checkInSession.title;
+    activeSessionNumber = checkInSession.n;
+  }
+  const sessionTwoIsUpcoming = Boolean(checkInSession);
   const adminCheckInButton = document.getElementById("adminOpenCheckIn");
   const learnerCheckInButton = document.getElementById("openCheckIn");
   adminCheckInButton.disabled = !sessionTwoIsUpcoming;
   learnerCheckInButton.disabled = !sessionTwoIsUpcoming;
   if (!sessionTwoIsUpcoming) {
-    adminCheckInButton.textContent = "Set Session 02 upcoming";
+    adminCheckInButton.textContent = "Set a session upcoming";
     learnerCheckInButton.textContent = "Check-in is not open";
   } else if (!activeCheckInCode) {
     adminCheckInButton.textContent = "Open check-in";
@@ -396,6 +460,8 @@ function renderSessionStates() {
     renderResources();
   }
   if (currentUserRole === "admin") renderMemberRoster();
+  if (currentUserRole === "admin" && firebaseDb && currentFirebaseUser) subscribeAdminCurrentSession();
+  if (currentUserRole === "student" && learnerRecords.length) renderLearnerProgress(learnerRecords);
   scheduleSessionClockRefresh();
 }
 document.querySelectorAll("[data-learn-view]").forEach((button) => button.addEventListener("click", () => {
@@ -403,16 +469,20 @@ document.querySelectorAll("[data-learn-view]").forEach((button) => button.addEve
   document.getElementById("outlineView").classList.toggle("active", button.dataset.learnView === "outline");
   document.getElementById("calendarView").classList.toggle("active", button.dataset.learnView === "calendar");
 }));
-document.querySelectorAll(".calendar-day.event").forEach((day) => day.addEventListener("click", () => {
+document.getElementById("calendarMonths").addEventListener("click", (event) => {
+  const day = event.target.closest(".calendar-day.event");
+  if (!day) return;
   if (day.querySelector("small").textContent.includes("S01")) { navigate("session"); return; }
   showToast(`${day.querySelector("strong").textContent}: open the course outline for materials.`);
-}));
+});
 document.getElementById("sessionList").addEventListener("click", (event) => {
   const action = event.target.closest("[data-session-action]");
   if (!action) return;
   const session = sessions.find((item) => item.n === action.dataset.sessionAction);
+  if (!session) return;
   if (session.n === "01") { navigate("session"); return; }
-  showToast("Session 02 details will be posted once the curriculum is confirmed.");
+  if (session.url) { window.open(session.url, "_blank", "noopener,noreferrer"); return; }
+  showToast(`${session.title} materials will be posted when ready.`);
 });
 
 function renderResources() {
@@ -440,10 +510,10 @@ function renderLearnerProgress(input) {
   const records = Array.isArray(input)
     ? input
     : input
-      ? [{ sessionId: SESSION_ID, sessionTitle: SESSION_TITLE, points: 2 }]
+      ? [{ sessionId: activeSessionId, sessionTitle: activeSessionTitle, points: 2 }]
       : [];
   learnerRecords = records;
-  hasCheckedIn = records.some((record) => record.sessionId === SESSION_ID);
+  hasCheckedIn = records.some((record) => record.sessionId === activeSessionId);
   const points = records.reduce((total, record) => total + Number(record.points || 0), 0);
   const sessionCount = new Set(records.filter((record) => String(record.sessionId || "").startsWith("session")).map((record) => record.sessionId)).size;
   const completedFraction = Math.min(sessionCount / 2, 1);
@@ -473,7 +543,7 @@ function renderLearnerProgress(input) {
   document.getElementById("pointsHistory").innerHTML = sortedRecords.length
     ? sortedRecords.map((record) => `<li><span>${safeText(record.activityTitle || record.sessionTitle || "Participation activity")}</span><strong>+${Number(record.points || 0)}</strong></li>`).join("")
     : '<li><span>Your first activity will appear here.</span><strong>—</strong></li>';
-  document.getElementById("openCheckIn").textContent = getEffectiveSessionState(sessions.find((session) => session.id === SESSION_ID)) === "upcoming"
+  document.getElementById("openCheckIn").textContent = getEffectiveSessionState(sessions.find((session) => session.id === activeSessionId)) === "upcoming"
     ? hasCheckedIn ? "Checked in ✓" : "Check in when class opens"
     : "Check-in is not open";
   document.getElementById("sessionCheckIn").textContent = hasCheckedIn ? "Checked in ✓" : "Check in";
@@ -584,20 +654,31 @@ function formatRosterDate(millis) {
 function buildRosterRows() {
   const adminEmails = (window.NEUROTECH_ADMIN_EMAILS || []).map((email) => email.toLowerCase());
   const memberMap = new Map();
-  adminMembers.filter((member) => member.role !== "admin" && !adminEmails.includes(String(member.email || "").toLowerCase())).forEach((member) => {
-    memberMap.set(member.uid, { ...member, name: member.name || member.email?.split("@")[0] || "Academy member", email: member.email || "", activities: [] });
+  adminMembers.filter((member) => member.role !== "admin" && member.enrollmentStatus !== "removed" && !adminEmails.includes(String(member.email || "").toLowerCase())).forEach((member) => {
+    const emailKey = String(member.email || "").toLowerCase() || member.uid;
+    const existing = memberMap.get(emailKey);
+    memberMap.set(emailKey, {
+      ...(existing || {}), ...member,
+      uid: existing?.uid && !String(existing.uid).startsWith("invite_") ? existing.uid : member.uid,
+      name: member.name || existing?.name || member.email?.split("@")[0] || "Academy member",
+      email: member.email || existing?.email || "",
+      memberDocIds: [...(existing?.memberDocIds || []), member.id || member.uid],
+      activities: existing?.activities || []
+    });
   });
   adminAllActivity.forEach((activity) => {
-    if (!activity.uid || adminEmails.includes(String(activity.email || "").toLowerCase())) return;
-    if (!memberMap.has(activity.uid)) {
-      memberMap.set(activity.uid, {
+    const emailKey = String(activity.email || "").toLowerCase() || activity.uid;
+    if (!emailKey || adminEmails.includes(String(activity.email || "").toLowerCase())) return;
+    if (!memberMap.has(emailKey)) {
+      memberMap.set(emailKey, {
         uid: activity.uid,
         email: activity.email || "",
         name: activity.name || activity.email?.split("@")[0] || "Academy member",
+        memberDocIds: [],
         activities: []
       });
     }
-    memberMap.get(activity.uid).activities.push(activity);
+    memberMap.get(emailKey).activities.push(activity);
   });
   return [...memberMap.values()].map((member) => {
     const points = member.activities.reduce((sum, activity) => sum + Number(activity.points || 0), 0);
@@ -634,7 +715,7 @@ function renderMemberRoster() {
       <td><b class="roster-number">${member.points}</b></td>
       <td><span class="roster-badge-count">${member.badgeCount}/12</span></td>
       <td><span class="roster-date">${formatRosterDate(member.lastActivity)}</span></td>
-      <td><button class="member-view-button" data-view-member="${safeText(member.uid)}">View</button></td>
+      <td><div class="member-row-actions"><button class="member-view-button" data-view-member="${safeText(member.uid)}">View</button><button class="member-remove-button" data-remove-member="${safeText(member.email)}">Remove</button></div></td>
     </tr>`;
   }).join("") : `<tr><td colspan="7" class="member-roster-empty">${adminRosterRows.length ? "No learners match this filter." : "Member profiles will appear after learners sign in."}</td></tr>`;
   if (currentAdminView === "points") renderPointsWorkspace();
@@ -666,8 +747,114 @@ document.getElementById("memberRosterFilter").addEventListener("change", (event)
 document.getElementById("memberRosterBody").addEventListener("click", (event) => {
   const button = event.target.closest("[data-view-member]");
   if (button) openMemberDetail(button.dataset.viewMember);
+  const removeButton = event.target.closest("[data-remove-member]");
+  if (removeButton) removeLearner(removeButton.dataset.removeMember);
 });
 document.getElementById("closeMemberDetail").addEventListener("click", () => document.getElementById("memberDetailDialog").close());
+
+function openAdminForm(dialogId) {
+  const formDialog = document.getElementById(dialogId);
+  if (formDialog && !formDialog.open) formDialog.showModal();
+}
+
+document.querySelectorAll("[data-close-admin-form]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.closeAdminForm).close()));
+document.getElementById("addLearnerButton").addEventListener("click", () => openAdminForm("addLearnerDialog"));
+document.getElementById("addSessionButton").addEventListener("click", () => openAdminForm("addSessionDialog"));
+document.getElementById("createSessionAction").addEventListener("click", () => { setAdminView("sessions"); openAdminForm("addSessionDialog"); });
+document.getElementById("addLearnerAction").addEventListener("click", () => { setAdminView("roster"); openAdminForm("addLearnerDialog"); });
+document.getElementById("importPointsAction").addEventListener("click", () => setAdminView("points"));
+
+document.getElementById("addLearnerForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const name = document.getElementById("newLearnerName").value.trim();
+  const email = document.getElementById("newLearnerEmail").value.trim().toLowerCase();
+  const status = document.getElementById("addLearnerStatus");
+  if (!name || !email) return;
+  if (adminRosterRows.some((member) => member.email.toLowerCase() === email)) { status.textContent = "This email is already on the roster."; return; }
+  const uid = `invite_${stableRecordId(email)}`;
+  if (!currentFirebaseUser || !firebaseDb) {
+    adminMembers.push({ id: uid, uid, name, email, role: "student", enrollmentStatus: "active", invited: true });
+    renderMemberRoster();
+    event.target.reset();
+    status.textContent = "Preview learner added.";
+    setTimeout(() => document.getElementById("addLearnerDialog").close(), 550);
+    return;
+  }
+  const submit = event.submitter;
+  submit.disabled = true;
+  status.textContent = "Adding learner…";
+  try {
+    await firebaseDb.collection("members").doc(uid).set({ uid, name, email, role: "student", photoURL: "", enrollmentStatus: "active", invited: true, joinedAt: firebase.firestore.FieldValue.serverTimestamp(), lastSeenAt: null, addedBy: currentFirebaseUser.email || "admin" });
+    event.target.reset();
+    status.textContent = "Learner added to the roster.";
+    showToast(`${name} added to the roster.`);
+    setTimeout(() => document.getElementById("addLearnerDialog").close(), 550);
+  } catch (error) {
+    console.error("Could not add learner", error);
+    status.textContent = "Could not add this learner. Check Firestore rules and try again.";
+  } finally { submit.disabled = false; }
+});
+
+async function removeLearner(email) {
+  const member = adminRosterRows.find((item) => item.email.toLowerCase() === String(email).toLowerCase());
+  if (!member || !window.confirm(`Remove ${member.name} from the Academy roster and delete their participation records?`)) return;
+  if (!currentFirebaseUser || !firebaseDb) {
+    adminMembers = adminMembers.filter((item) => String(item.email || "").toLowerCase() !== member.email.toLowerCase());
+    adminAllActivity = adminAllActivity.filter((item) => String(item.email || "").toLowerCase() !== member.email.toLowerCase());
+    renderMemberRoster();
+    return;
+  }
+  try {
+    const batch = firebaseDb.batch();
+    member.memberDocIds.forEach((id) => batch.delete(firebaseDb.collection("members").doc(id)));
+    adminAllActivity.filter((item) => String(item.email || "").toLowerCase() === member.email.toLowerCase()).forEach((item) => batch.delete(firebaseDb.collection("attendance").doc(item.id)));
+    await batch.commit();
+    showToast(`${member.name} removed from the roster.`);
+  } catch (error) {
+    console.error("Could not remove learner", error);
+    showToast("Could not remove this learner.");
+  }
+}
+
+document.getElementById("addSessionForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const title = document.getElementById("newSessionTitle").value.trim();
+  const dateValue = document.getElementById("newSessionDate").value;
+  const timeValue = document.getElementById("newSessionTime").value;
+  const desc = document.getElementById("newSessionDescription").value.trim();
+  const url = document.getElementById("newSessionLink").value.trim();
+  const status = document.getElementById("addSessionStatus");
+  if (!title || !dateValue || !timeValue || !desc) return;
+  const nextNumber = Math.max(0, ...sessions.map((session) => Number(session.n) || 0)) + 1;
+  const n = String(nextNumber).padStart(2, "0");
+  const id = `session${n}`;
+  const starts = new Date(`${dateValue}T${timeValue}:00`);
+  const ends = new Date(starts.getTime() + 50 * 60 * 1000);
+  const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts);
+  const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts);
+  const session = { id, n, title, desc, state: "draft", date, time, year: starts.getFullYear(), timeZone: ACADEMY_TIME_ZONE, startsAt: starts.toISOString(), endsAt: ends.toISOString(), url, dynamic: true };
+  if (!currentFirebaseUser || !firebaseDb) {
+    sessions.push(session); sessionStates[id] = "draft"; renderSessionStates(); event.target.reset(); status.textContent = "Preview draft created."; setTimeout(() => document.getElementById("addSessionDialog").close(), 550); return;
+  }
+  const submit = event.submitter;
+  submit.disabled = true;
+  status.textContent = "Creating draft…";
+  try {
+    const nextStates = { ...sessionStates, [id]: "draft" };
+    const batch = firebaseDb.batch();
+    batch.set(firebaseDb.collection("sessions").doc(id), { ...session, kind: "curriculum", createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentFirebaseUser.email || "admin" });
+    batch.set(firebaseDb.collection("academyConfig").doc("current"), { sessionStates: nextStates, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: currentFirebaseUser.email || "admin" }, { merge: true });
+    await batch.commit();
+    event.target.reset();
+    document.getElementById("newSessionTime").value = "19:00";
+    status.textContent = `Session ${n} created as a draft.`;
+    showToast(`Session ${n} created.`);
+    setTimeout(() => document.getElementById("addSessionDialog").close(), 550);
+  } catch (error) {
+    console.error("Could not create session", error);
+    status.textContent = "Could not create the session. Try again.";
+  } finally { submit.disabled = false; }
+});
 
 function setAdminView(view) {
   currentAdminView = view;
@@ -864,6 +1051,35 @@ document.getElementById("pointsLedgerBody").addEventListener("click", async (eve
   }
 });
 
+function subscribeAdminCurrentSession() {
+  if (!firebaseDb || currentUserRole !== "admin") return;
+  const currentSession = sessions.find((session) => session.id === activeSessionId && session.state === "upcoming");
+  if (!currentSession) {
+    unsubscribeRoster?.(); unsubscribeRoster = null;
+    unsubscribeSession?.(); unsubscribeSession = null;
+    subscribedAdminSessionId = "";
+    document.getElementById("adminOpenCheckIn").disabled = true;
+    document.getElementById("adminOpenCheckIn").textContent = "Set a session upcoming";
+    return;
+  }
+  if (subscribedAdminSessionId === activeSessionId) return;
+  unsubscribeRoster?.();
+  unsubscribeSession?.();
+  subscribedAdminSessionId = activeSessionId;
+  unsubscribeRoster = firebaseDb.collection("attendance").where("sessionId", "==", activeSessionId).onSnapshot((snapshot) => {
+    const records = snapshot.docs.map((item) => item.data()).sort((a, b) => (a.checkedInAt?.toMillis?.() || 0) - (b.checkedInAt?.toMillis?.() || 0));
+    renderRoster(records);
+  }, (error) => { console.error("Could not load roster", error); showToast("Live attendance could not load."); });
+  unsubscribeSession = firebaseDb.collection("checkins").doc(activeSessionId).onSnapshot((snapshot) => {
+    const data = snapshot.data();
+    const isOpen = Boolean(data?.checkInOpen && (data.expiresAt?.toMillis?.() || 0) > Date.now());
+    if (isOpen && data.code) setAdminCheckInCode(data.code);
+    if (!isOpen) activeCheckInCode = "";
+    document.getElementById("adminOpenCheckIn").disabled = false;
+    document.getElementById("adminOpenCheckIn").textContent = isOpen ? "Show check-in code" : `Open Session ${activeSessionNumber} check-in`;
+  }, (error) => { console.error("Could not load current check-in", error); showToast("Check-in status could not load."); });
+}
+
 function startLiveData(role, user) {
   unsubscribeAttendance?.();
   unsubscribeRoster?.();
@@ -871,12 +1087,15 @@ function startLiveData(role, user) {
   unsubscribeAcademyConfig?.();
   unsubscribeMembers?.();
   unsubscribeAllAttendance?.();
+  unsubscribeCurriculumSessions?.();
   unsubscribeAttendance = null;
   unsubscribeRoster = null;
   unsubscribeSession = null;
   unsubscribeAcademyConfig = null;
   unsubscribeMembers = null;
   unsubscribeAllAttendance = null;
+  unsubscribeCurriculumSessions = null;
+  subscribedAdminSessionId = "";
 
   unsubscribeAcademyConfig = firebaseDb.collection("academyConfig").doc("current").onSnapshot((snapshot) => {
     const config = snapshot.data() || {};
@@ -888,8 +1107,20 @@ function startLiveData(role, user) {
     renderSessionStates();
   });
 
+  unsubscribeCurriculumSessions = firebaseDb.collection("sessions").onSnapshot((snapshot) => {
+    for (let index = sessions.length - 1; index >= 0; index -= 1) if (sessions[index].dynamic) sessions.splice(index, 1);
+    snapshot.docs.forEach((item) => {
+      const data = item.data();
+      if (data.kind !== "curriculum" || !data.startsAt || !data.title) return;
+      sessions.push({ ...data, id: item.id, n: data.n || item.id.replace(/\D/g, "").padStart(2, "0"), state: sessionStates[item.id] || data.state || "draft", dynamic: true });
+    });
+    sessions.sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
+    renderSessionStates();
+    maybeOpenQrCheckIn(role);
+  }, (error) => console.error("Could not load curriculum sessions", error));
+
   if (role === "student") {
-    const attendanceQuery = firebaseDb.collection("attendance").where("uid", "==", user.uid);
+    const attendanceQuery = firebaseDb.collection("attendance").where("email", "==", String(user.email || "").toLowerCase());
     unsubscribeAttendance = attendanceQuery.onSnapshot((snapshot) => {
       renderLearnerProgress(snapshot.docs.map((item) => item.data()));
     }, (error) => {
@@ -900,7 +1131,7 @@ function startLiveData(role, user) {
 
   if (role === "admin") {
     unsubscribeMembers = firebaseDb.collection("members").onSnapshot((snapshot) => {
-      adminMembers = snapshot.docs.map((item) => item.data());
+      adminMembers = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
       renderMemberRoster();
     }, (error) => {
       console.error("Could not load member roster", error);
@@ -913,27 +1144,7 @@ function startLiveData(role, user) {
       console.error("Could not load learner activity", error);
       showToast("Learner progress could not load.");
     });
-    unsubscribeRoster = firebaseDb.collection("attendance").where("sessionId", "==", SESSION_ID).onSnapshot((snapshot) => {
-      const records = snapshot.docs.map((item) => item.data()).sort((a, b) => {
-        return (a.checkedInAt?.toMillis?.() || 0) - (b.checkedInAt?.toMillis?.() || 0);
-      });
-      renderRoster(records);
-    }, (error) => {
-      console.error("Could not load roster", error);
-      showToast("Live attendance could not load. Refresh and try again.");
-    });
-  }
-
-  if (role === "admin") {
-    unsubscribeSession = firebaseDb.collection("checkins").doc(SESSION_ID).onSnapshot((snapshot) => {
-      const data = snapshot.data();
-      const isOpen = Boolean(data?.checkInOpen && (data.expiresAt?.toMillis?.() || 0) > Date.now());
-      if (isOpen && data.code) setAdminCheckInCode(data.code);
-      if (!isOpen) activeCheckInCode = "";
-      const canOpen = getEffectiveSessionState(sessions.find((session) => session.id === SESSION_ID)) === "upcoming";
-      document.getElementById("adminOpenCheckIn").disabled = !canOpen;
-      document.getElementById("adminOpenCheckIn").textContent = canOpen ? isOpen ? "Show check-in code" : "Open check-in" : "Set Session 02 upcoming";
-    });
+    subscribeAdminCurrentSession();
   }
 }
 
@@ -979,8 +1190,8 @@ document.getElementById("adminSessionManager").addEventListener("click", async (
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentFirebaseUser.email || "admin"
     }, { merge: true });
-    if (sessionId === SESSION_ID && nextState !== "upcoming") {
-      batch.set(firebaseDb.collection("checkins").doc(SESSION_ID), {
+    if (sessionId === activeSessionId && nextState !== "upcoming") {
+      batch.set(firebaseDb.collection("checkins").doc(activeSessionId), {
         checkInOpen: false,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
@@ -1018,6 +1229,9 @@ function setCheckInSuccess() {
 }
 
 function openDialog() {
+  document.getElementById("learnerCheckInLabel").textContent = `SESSION ${activeSessionNumber} · CHECK-IN`;
+  document.getElementById("checkInSuccessTitle").textContent = `Session ${activeSessionNumber}`;
+  document.getElementById("checkInSuccessSession").textContent = activeSessionTitle;
   codeStep.classList.toggle("active", !hasCheckedIn);
   successStep.classList.toggle("active", hasCheckedIn);
   inputs.forEach((input) => { input.value = ""; });
@@ -1031,14 +1245,23 @@ function openDialog() {
 
 function maybeOpenQrCheckIn(role) {
   if (role !== "student" || pendingCheckInCode.length !== 6) return;
+  if (pendingCheckInSession) {
+    const linkedSession = sessions.find((session) => session.id === pendingCheckInSession);
+    if (!linkedSession) return;
+    activeSessionId = linkedSession.id;
+    activeSessionTitle = linkedSession.title;
+    activeSessionNumber = linkedSession.n;
+  }
   const code = pendingCheckInCode;
   pendingCheckInCode = "";
+  pendingCheckInSession = "";
   openDialog();
   code.split("").forEach((digit, index) => { inputs[index].value = digit; });
   submitCode.disabled = false;
   submitCode.focus();
   const cleanUrl = new URL(location.href);
   cleanUrl.searchParams.delete("checkin");
+  cleanUrl.searchParams.delete("session");
   history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
 }
 
@@ -1079,7 +1302,7 @@ submitCode.addEventListener("click", async () => {
   if (!currentFirebaseUser || !firebaseDb) {
     if (code !== PREVIEW_CHECK_IN_CODE) { setCheckInStatus(`That code isn’t active. Try ${PREVIEW_CHECK_IN_CODE} in preview.`); return; }
     hasCheckedIn = true;
-    localStorage.setItem("neurotech-checkin", SESSION_ID);
+    localStorage.setItem("neurotech-checkin", activeSessionId);
     renderLearnerProgress(true);
     setCheckInSuccess();
     return;
@@ -1088,7 +1311,7 @@ submitCode.addEventListener("click", async () => {
   submitCode.disabled = true;
   submitCode.textContent = "Checking…";
   try {
-    const attendanceRef = firebaseDb.collection("attendance").doc(`${SESSION_ID}_${currentFirebaseUser.uid}`);
+    const attendanceRef = firebaseDb.collection("attendance").doc(`${activeSessionId}_${currentFirebaseUser.uid}`);
     const attendanceSnapshot = await attendanceRef.get();
 
     if (attendanceSnapshot.exists) {
@@ -1103,8 +1326,8 @@ submitCode.addEventListener("click", async () => {
       uid: currentFirebaseUser.uid,
       email: currentFirebaseUser.email || "",
       name: currentFirebaseUser.displayName || currentFirebaseUser.email?.split("@")[0] || "Academy member",
-      sessionId: SESSION_ID,
-      sessionTitle: SESSION_TITLE,
+      sessionId: activeSessionId,
+      sessionTitle: activeSessionTitle,
       points: 2,
       checkInCode: code,
       checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1140,6 +1363,7 @@ function buildCheckInLink(code) {
     : `${location.origin}${location.pathname}`;
   const url = new URL(base);
   url.searchParams.set("checkin", code);
+  url.searchParams.set("session", activeSessionId);
   url.hash = "home";
   return url.href;
 }
@@ -1184,6 +1408,13 @@ function updateCheckInTimer() {
 
 function showAdminCheckIn(expiresAt = Date.now() + 15 * 60 * 1000, code = activeCheckInCode || PREVIEW_CHECK_IN_CODE) {
   setAdminCheckInCode(code);
+  const session = sessions.find((item) => item.id === activeSessionId);
+  document.getElementById("adminCheckInSessionLabel").textContent = `SESSION ${activeSessionNumber}`;
+  document.getElementById("adminCheckInSideLabel").textContent = `SESSION ${activeSessionNumber}`;
+  document.getElementById("adminCheckInSideTitle").textContent = activeSessionTitle;
+  document.getElementById("adminCheckInSideDate").textContent = session ? `${session.date} · ${session.time}` : "Current Academy session";
+  document.getElementById("checkInSuccessTitle").textContent = `Session ${activeSessionNumber}`;
+  document.getElementById("checkInSuccessSession").textContent = activeSessionTitle;
   document.querySelector(".checkin-live-label").classList.remove("expired");
   document.getElementById("checkInLiveStatus").textContent = "CHECK-IN OPEN";
   checkInExpiresAt = expiresAt;
@@ -1204,7 +1435,7 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
     return;
   }
   try {
-    const checkInRef = firebaseDb.collection("checkins").doc(SESSION_ID);
+    const checkInRef = firebaseDb.collection("checkins").doc(activeSessionId);
     const checkInSnapshot = await checkInRef.get();
     const checkInData = checkInSnapshot.data();
     const existingExpiry = checkInData?.expiresAt?.toMillis?.() || 0;
@@ -1219,12 +1450,14 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
     const batch = firebaseDb.batch();
     batch.set(checkInRef, {
       code,
+      sessionTitle: activeSessionTitle,
+      points: 2,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-    batch.set(firebaseDb.collection("sessions").doc(SESSION_ID), {
-      title: SESSION_TITLE,
+    batch.set(firebaseDb.collection("sessions").doc(activeSessionId), {
+      title: activeSessionTitle,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1258,8 +1491,8 @@ document.getElementById("endCheckIn").addEventListener("click", async () => {
         checkInOpen: false,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-      batch.set(firebaseDb.collection("checkins").doc(SESSION_ID), closedState, { merge: true });
-      batch.set(firebaseDb.collection("sessions").doc(SESSION_ID), closedState, { merge: true });
+      batch.set(firebaseDb.collection("checkins").doc(activeSessionId), closedState, { merge: true });
+      batch.set(firebaseDb.collection("sessions").doc(activeSessionId), closedState, { merge: true });
       await batch.commit();
     } catch (error) {
       console.error("Could not close check-in", error);
@@ -1285,7 +1518,7 @@ document.getElementById("copyAcademyLink").addEventListener("click", async () =>
 
 document.getElementById("exportAttendance").addEventListener("click", () => {
   if (!adminAttendanceRecords.length) {
-    showToast("There are no Session 02 attendance records to export yet.");
+    showToast(`There are no Session ${activeSessionNumber} attendance records to export yet.`);
     return;
   }
   const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -1304,7 +1537,7 @@ document.getElementById("exportAttendance").addEventListener("click", () => {
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = "neurotech-session-02-attendance.csv";
+  link.download = `neurotech-session-${activeSessionNumber}-attendance.csv`;
   link.click();
   URL.revokeObjectURL(url);
   showToast("Attendance CSV downloaded.");
@@ -1347,6 +1580,7 @@ const localAdminView = location.protocol === "file:" ? previewParams.get("adminV
 const academyDateParts = new Intl.DateTimeFormat("en-US", { timeZone: ACADEMY_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
 const academyDate = Object.fromEntries(academyDateParts.map((part) => [part.type, part.value]));
 document.getElementById("activityDateInput").value = `${academyDate.year}-${academyDate.month}-${academyDate.day}`;
+document.getElementById("newSessionDate").value = `${academyDate.year}-${academyDate.month}-${academyDate.day}`;
 if (["student", "admin"].includes(localPreviewRole)) localStorage.setItem("neurotech-auth-demo", localPreviewRole);
 const initialRoute = location.hash.slice(1);
 const validRoutes = ["home", "learn", "session", "library", "me", "admin"];
@@ -1354,7 +1588,7 @@ const savedRole = localStorage.getItem("neurotech-auth-demo");
 if (["student", "admin"].includes(savedRole)) {
   const destination = validRoutes.includes(initialRoute) ? initialRoute : savedRole === "admin" ? "admin" : "home";
   completeSignIn(savedRole, destination, null, true);
-  if (savedRole === "admin" && ["overview", "roster", "points"].includes(localAdminView)) setAdminView(localAdminView);
+  if (savedRole === "admin" && ["overview", "sessions", "roster", "points"].includes(localAdminView)) setAdminView(localAdminView);
   if (savedRole === "admin" && location.protocol === "file:" && previewParams.get("checkinDisplay") === "1") showAdminCheckIn(Date.now() + 15 * 60 * 1000, generateCheckInCode());
   maybeOpenQrCheckIn(savedRole);
 } else {
