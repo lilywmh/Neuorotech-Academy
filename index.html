@@ -430,11 +430,27 @@
           <p class="manager-status" id="sessionManagerStatus" role="status"><i></i><span>Session 02 is currently shown as the next Academy meeting.</span></p>
         </section>
         <div class="admin-metrics">
-          <article><small>REGISTERED MEMBERS</small><strong>60</strong><p>Before the first session</p></article>
-          <article><small>AVG. ATTENDANCE</small><strong>—</strong><p>Updates as records accumulate</p></article>
+          <article><small>REGISTERED MEMBERS</small><strong id="adminMemberCount">0</strong><p>Members appear after first sign-in</p></article>
+          <article><small>AVG. ATTENDANCE</small><strong id="adminAverageAttendance">—</strong><p>Across published sessions</p></article>
           <article><small>CHECKPOINT RATE</small><strong>—</strong><p>Optional work is not open yet</p></article>
-          <article><small>NEEDS FOLLOW-UP</small><strong>00</strong><p>No attendance history yet</p></article>
+          <article><small>NEEDS FOLLOW-UP</small><strong id="adminFollowUpCount">0</strong><p>Members with no activity yet</p></article>
         </div>
+        <section class="member-roster-panel" aria-labelledby="memberRosterTitle">
+          <div class="member-roster-heading">
+            <div><p class="panel-label">LEARNER ROSTER</p><h2 id="memberRosterTitle">Student progress</h2><p>Private participation history for Academy admins.</p></div>
+            <div class="member-roster-tools">
+              <label class="member-search"><span aria-hidden="true">⌕</span><input id="memberRosterSearch" type="search" placeholder="Search name or email" aria-label="Search learner roster" /></label>
+              <select id="memberRosterFilter" aria-label="Filter learners by status"><option value="all">All learners</option><option value="active">Active</option><option value="started">Getting started</option><option value="no-activity">No activity</option></select>
+            </div>
+          </div>
+          <div class="member-roster-table-wrap">
+            <table class="member-roster-table">
+              <thead><tr><th>Learner</th><th>Status</th><th>Sessions</th><th>Points</th><th>Badges</th><th>Last activity</th><th><span class="sr-only">Details</span></th></tr></thead>
+              <tbody id="memberRosterBody"><tr><td colspan="7" class="member-roster-empty">Member profiles will appear after learners sign in.</td></tr></tbody>
+            </table>
+          </div>
+          <p class="member-roster-footnote">This is a support view, not a public ranking. “No activity” means the member has signed in but has no recorded check-in or imported activity.</p>
+        </section>
         <div class="admin-main">
           <article class="roster-card">
             <div class="section-heading"><div><span class="section-number">01</span><h2>Live attendance</h2></div><span class="live-pill">● LIVE</span></div>
@@ -505,6 +521,14 @@
           <button class="button danger wide" id="endCheckIn">End check-in</button>
         </div>
       </aside>
+    </dialog>
+
+    <dialog class="member-detail-dialog" id="memberDetailDialog">
+      <button class="dialog-close" id="closeMemberDetail" aria-label="Close learner details">×</button>
+      <div class="member-detail-identity"><span id="memberDetailInitials">NA</span><div><small>LEARNER PROFILE</small><h2 id="memberDetailName">Academy member</h2><p id="memberDetailEmail"></p></div></div>
+      <div class="member-detail-stats"><span><b id="memberDetailSessions">0</b><small>Sessions</small></span><span><b id="memberDetailPoints">0</b><small>Points</small></span><span><b id="memberDetailBadges">1</b><small>Badges</small></span></div>
+      <div class="member-detail-section"><small>STATUS</small><strong id="memberDetailStatus">No activity</strong></div>
+      <div class="member-detail-section"><small>ACTIVITY HISTORY</small><div id="memberDetailActivity"><p>No recorded activity yet.</p></div></div>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

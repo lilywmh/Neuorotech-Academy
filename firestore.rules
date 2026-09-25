@@ -34,6 +34,28 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /members/{memberId} {
+      allow get: if signedIn() && (memberId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if signedIn()
+        && memberId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          "uid", "email", "name", "photoURL", "role", "joinedAt", "lastSeenAt"
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && (request.resource.data.role == "student" || isAdmin());
+      allow update: if signedIn()
+        && memberId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          "uid", "email", "name", "photoURL", "role", "joinedAt", "lastSeenAt"
+        ])
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.role == resource.data.role;
+      allow delete: if isAdmin();
+    }
+
     match /sessions/{sessionId} {
       allow read, create, update, delete: if isAdmin();
     }

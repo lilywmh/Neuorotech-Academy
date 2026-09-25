@@ -25,11 +25,17 @@ let unsubscribeAttendance = null;
 let unsubscribeRoster = null;
 let unsubscribeSession = null;
 let unsubscribeAcademyConfig = null;
+let unsubscribeMembers = null;
+let unsubscribeAllAttendance = null;
 let hasCheckedIn = false;
 let liveAttendanceCount = 0;
 let activeCheckInCode = "";
 let learnerRecords = [];
 let adminAttendanceRecords = [];
+let adminMembers = [];
+let adminAllActivity = [];
+let adminRosterRows = [];
+let memberRosterFilter = "all";
 const PREVIEW_CHECK_IN_CODE = "092426";
 const SESSION_ID = "session02";
 const SESSION_TITLE = "Where Signals Come From";
@@ -120,8 +126,41 @@ function completeSignIn(role, destination = role === "admin" ? "admin" : "home",
     hasCheckedIn = localStorage.getItem("neurotech-checkin") === SESSION_ID;
     renderLearnerProgress(hasCheckedIn);
   }
+  if (persistDemo && role === "admin") {
+    adminMembers = [
+      { uid: "preview-1", name: "Maya Chen", email: "maya@usc.edu", role: "student" },
+      { uid: "preview-2", name: "Jordan Lee", email: "jordan@usc.edu", role: "student" },
+      { uid: "preview-3", name: "Avery Kim", email: "avery@usc.edu", role: "student" }
+    ];
+    adminAllActivity = [
+      { uid: "preview-1", name: "Maya Chen", email: "maya@usc.edu", sessionId: "session01", sessionTitle: "Fall 2026 Intro Meeting", points: 2, occurredAt: { toMillis: () => Date.now() - 86400000 } },
+      { uid: "preview-1", name: "Maya Chen", email: "maya@usc.edu", activityTitle: "Optional signal activity", points: 2, occurredAt: { toMillis: () => Date.now() - 3600000 } },
+      { uid: "preview-2", name: "Jordan Lee", email: "jordan@usc.edu", sessionId: "session01", sessionTitle: "Fall 2026 Intro Meeting", points: 2, occurredAt: { toMillis: () => Date.now() - 86400000 } }
+    ];
+    renderMemberRoster();
+  }
   setAuthError();
   navigate(destination);
+}
+
+async function upsertMemberProfile(user, role) {
+  if (!user || !firebaseDb) return;
+  const memberRef = firebaseDb.collection("members").doc(user.uid);
+  try {
+    const snapshot = await memberRef.get();
+    const profile = {
+      uid: user.uid,
+      email: user.email || "",
+      name: user.displayName || user.email?.split("@")[0] || "Academy member",
+      photoURL: user.photoURL || "",
+      role,
+      lastSeenAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (!snapshot.exists) profile.joinedAt = firebase.firestore.FieldValue.serverTimestamp();
+    await memberRef.set(profile, { merge: true });
+  } catch (error) {
+    console.error("Could not update member profile", error);
+  }
 }
 
 function showSignedOut() {
@@ -129,11 +168,14 @@ function showSignedOut() {
   unsubscribeRoster?.();
   unsubscribeSession?.();
   unsubscribeAcademyConfig?.();
+  unsubscribeMembers?.();
+  unsubscribeAllAttendance?.();
   unsubscribeAttendance = null;
   unsubscribeRoster = null;
   unsubscribeSession = null;
   unsubscribeAcademyConfig = null;
-  unsubscribeAcademyConfig = null;
+  unsubscribeMembers = null;
+  unsubscribeAllAttendance = null;
   currentFirebaseUser = null;
   hasCheckedIn = false;
   currentUserRole = null;
@@ -160,6 +202,7 @@ function initializeFirebaseAuth(destination = "home") {
     const role = (window.NEUROTECH_ADMIN_EMAILS || []).includes(email) ? "admin" : "student";
     currentFirebaseUser = user;
     completeSignIn(role, destination, user);
+    upsertMemberProfile(user, role);
     startLiveData(role, user);
   });
 }
@@ -338,6 +381,7 @@ function renderSessionStates() {
     resources[0].type = sessionOne.state === "past" ? "past" : "current";
     renderResources();
   }
+  if (currentUserRole === "admin") renderMemberRoster();
   scheduleSessionClockRefresh();
 }
 document.querySelectorAll("[data-learn-view]").forEach((button) => button.addEventListener("click", () => {
@@ -508,15 +552,121 @@ function renderRoster(records) {
   }).join("");
 }
 
+function activityMillis(record) {
+  return record.checkedInAt?.toMillis?.() || record.occurredAt?.toMillis?.() || 0;
+}
+
+function learnerStatus(sessionCount, points, activityCount) {
+  if (sessionCount >= 2 || points >= 4) return { id: "active", label: "Active" };
+  if (activityCount > 0) return { id: "started", label: "Getting started" };
+  return { id: "no-activity", label: "No activity" };
+}
+
+function formatRosterDate(millis) {
+  if (!millis) return "—";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: ACADEMY_TIME_ZONE }).format(new Date(millis));
+}
+
+function buildRosterRows() {
+  const adminEmails = (window.NEUROTECH_ADMIN_EMAILS || []).map((email) => email.toLowerCase());
+  const memberMap = new Map();
+  adminMembers.filter((member) => member.role !== "admin" && !adminEmails.includes(String(member.email || "").toLowerCase())).forEach((member) => {
+    memberMap.set(member.uid, { ...member, name: member.name || member.email?.split("@")[0] || "Academy member", email: member.email || "", activities: [] });
+  });
+  adminAllActivity.forEach((activity) => {
+    if (!activity.uid || adminEmails.includes(String(activity.email || "").toLowerCase())) return;
+    if (!memberMap.has(activity.uid)) {
+      memberMap.set(activity.uid, {
+        uid: activity.uid,
+        email: activity.email || "",
+        name: activity.name || activity.email?.split("@")[0] || "Academy member",
+        activities: []
+      });
+    }
+    memberMap.get(activity.uid).activities.push(activity);
+  });
+  return [...memberMap.values()].map((member) => {
+    const points = member.activities.reduce((sum, activity) => sum + Number(activity.points || 0), 0);
+    const sessionCount = new Set(member.activities.filter((activity) => String(activity.sessionId || "").startsWith("session")).map((activity) => activity.sessionId)).size;
+    const lastActivity = member.activities.reduce((latest, activity) => Math.max(latest, activityMillis(activity)), 0);
+    const status = learnerStatus(sessionCount, points, member.activities.length);
+    const badgeCount = badgeCatalog.filter((badge) => points >= badge.points).length;
+    return { ...member, points, sessionCount, lastActivity, status, badgeCount };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderMemberRoster() {
+  const body = document.getElementById("memberRosterBody");
+  if (!body) return;
+  adminRosterRows = buildRosterRows();
+  const query = document.getElementById("memberRosterSearch").value.trim().toLowerCase();
+  const filtered = adminRosterRows.filter((member) => {
+    const matchesSearch = `${member.name} ${member.email}`.toLowerCase().includes(query);
+    const matchesFilter = memberRosterFilter === "all" || member.status.id === memberRosterFilter;
+    return matchesSearch && matchesFilter;
+  });
+  document.getElementById("adminMemberCount").textContent = String(adminRosterRows.length);
+  document.getElementById("adminFollowUpCount").textContent = String(adminRosterRows.filter((member) => member.status.id === "no-activity").length);
+  const visibleSessionCount = Math.max(1, sessions.filter((session) => session.state !== "draft").length);
+  const possibleAttendances = adminRosterRows.length * visibleSessionCount;
+  const recordedAttendances = adminRosterRows.reduce((sum, member) => sum + member.sessionCount, 0);
+  document.getElementById("adminAverageAttendance").textContent = possibleAttendances ? `${Math.round((recordedAttendances / possibleAttendances) * 100)}%` : "—";
+  body.innerHTML = filtered.length ? filtered.map((member) => {
+    const initials = member.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "NA";
+    return `<tr>
+      <td><div class="member-cell"><i>${safeText(initials)}</i><span><b>${safeText(member.name)}</b><small>${safeText(member.email)}</small></span></div></td>
+      <td><span class="learner-status ${member.status.id}"><i></i>${member.status.label}</span></td>
+      <td><b class="roster-number">${member.sessionCount}</b></td>
+      <td><b class="roster-number">${member.points}</b></td>
+      <td><span class="roster-badge-count">${member.badgeCount}/12</span></td>
+      <td><span class="roster-date">${formatRosterDate(member.lastActivity)}</span></td>
+      <td><button class="member-view-button" data-view-member="${safeText(member.uid)}">View</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="7" class="member-roster-empty">${adminRosterRows.length ? "No learners match this filter." : "Member profiles will appear after learners sign in."}</td></tr>`;
+}
+
+function openMemberDetail(uid) {
+  const member = adminRosterRows.find((item) => item.uid === uid);
+  if (!member) return;
+  const initials = member.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "NA";
+  document.getElementById("memberDetailInitials").textContent = initials;
+  document.getElementById("memberDetailName").textContent = member.name;
+  document.getElementById("memberDetailEmail").textContent = member.email;
+  document.getElementById("memberDetailSessions").textContent = String(member.sessionCount);
+  document.getElementById("memberDetailPoints").textContent = String(member.points);
+  document.getElementById("memberDetailBadges").textContent = String(member.badgeCount);
+  document.getElementById("memberDetailStatus").textContent = member.status.label;
+  const activity = [...member.activities].sort((a, b) => activityMillis(b) - activityMillis(a));
+  document.getElementById("memberDetailActivity").innerHTML = activity.length
+    ? activity.map((item) => `<div><span><b>${safeText(item.activityTitle || item.sessionTitle || "Participation activity")}</b><small>${formatRosterDate(activityMillis(item))}</small></span><strong>+${Number(item.points || 0)}</strong></div>`).join("")
+    : "<p>No recorded activity yet.</p>";
+  document.getElementById("memberDetailDialog").showModal();
+}
+
+document.getElementById("memberRosterSearch").addEventListener("input", renderMemberRoster);
+document.getElementById("memberRosterFilter").addEventListener("change", (event) => {
+  memberRosterFilter = event.target.value;
+  renderMemberRoster();
+});
+document.getElementById("memberRosterBody").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-view-member]");
+  if (button) openMemberDetail(button.dataset.viewMember);
+});
+document.getElementById("closeMemberDetail").addEventListener("click", () => document.getElementById("memberDetailDialog").close());
+
 function startLiveData(role, user) {
   unsubscribeAttendance?.();
   unsubscribeRoster?.();
   unsubscribeSession?.();
   unsubscribeAcademyConfig?.();
+  unsubscribeMembers?.();
+  unsubscribeAllAttendance?.();
   unsubscribeAttendance = null;
   unsubscribeRoster = null;
   unsubscribeSession = null;
   unsubscribeAcademyConfig = null;
+  unsubscribeMembers = null;
+  unsubscribeAllAttendance = null;
 
   unsubscribeAcademyConfig = firebaseDb.collection("academyConfig").doc("current").onSnapshot((snapshot) => {
     const config = snapshot.data() || {};
@@ -539,6 +689,20 @@ function startLiveData(role, user) {
   }
 
   if (role === "admin") {
+    unsubscribeMembers = firebaseDb.collection("members").onSnapshot((snapshot) => {
+      adminMembers = snapshot.docs.map((item) => item.data());
+      renderMemberRoster();
+    }, (error) => {
+      console.error("Could not load member roster", error);
+      showToast("Member roster could not load. Confirm Firestore rules are deployed.");
+    });
+    unsubscribeAllAttendance = firebaseDb.collection("attendance").onSnapshot((snapshot) => {
+      adminAllActivity = snapshot.docs.map((item) => item.data());
+      renderMemberRoster();
+    }, (error) => {
+      console.error("Could not load learner activity", error);
+      showToast("Learner progress could not load.");
+    });
     unsubscribeRoster = firebaseDb.collection("attendance").where("sessionId", "==", SESSION_ID).onSnapshot((snapshot) => {
       const records = snapshot.docs.map((item) => item.data()).sort((a, b) => {
         return (a.checkedInAt?.toMillis?.() || 0) - (b.checkedInAt?.toMillis?.() || 0);
