@@ -38,6 +38,7 @@ let adminRosterRows = [];
 let memberRosterFilter = "all";
 let pendingCsvRows = [];
 let currentAdminView = "overview";
+let pendingCheckInCode = (new URLSearchParams(location.search).get("checkin") || "").replace(/\D/g, "").slice(0, 6);
 const PREVIEW_CHECK_IN_CODE = "092426";
 const SESSION_ID = "session02";
 const SESSION_TITLE = "Where Signals Come From";
@@ -216,6 +217,7 @@ function initializeFirebaseAuth(destination = "home") {
     completeSignIn(role, destination, user);
     upsertMemberProfile(user, role);
     startLiveData(role, user);
+    maybeOpenQrCheckIn(role);
   });
 }
 
@@ -1026,6 +1028,20 @@ function openDialog() {
   dialog.showModal();
   if (!hasCheckedIn) inputs[0].focus();
 }
+
+function maybeOpenQrCheckIn(role) {
+  if (role !== "student" || pendingCheckInCode.length !== 6) return;
+  const code = pendingCheckInCode;
+  pendingCheckInCode = "";
+  openDialog();
+  code.split("").forEach((digit, index) => { inputs[index].value = digit; });
+  submitCode.disabled = false;
+  submitCode.focus();
+  const cleanUrl = new URL(location.href);
+  cleanUrl.searchParams.delete("checkin");
+  history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+}
+
 document.getElementById("openCheckIn").addEventListener("click", openDialog);
 document.getElementById("sessionCheckIn").addEventListener("click", openDialog);
 document.getElementById("closeCheckIn").addEventListener("click", () => dialog.close());
@@ -1118,12 +1134,41 @@ function generateCheckInCode() {
   return String(100000 + (randomValue[0] % 900000));
 }
 
+function buildCheckInLink(code) {
+  const base = location.protocol === "file:"
+    ? "https://neurotech-academy-1c5d3.web.app/"
+    : `${location.origin}${location.pathname}`;
+  const url = new URL(base);
+  url.searchParams.set("checkin", code);
+  url.hash = "home";
+  return url.href;
+}
+
+function renderAdminCheckInQr(code) {
+  const target = document.getElementById("adminCheckInQr");
+  target.innerHTML = "";
+  if (!/^\d{6}$/.test(code)) return;
+  if (!window.QRCode) {
+    target.innerHTML = "<span>QR unavailable<br />Use the 6-digit code</span>";
+    return;
+  }
+  new window.QRCode(target, {
+    text: buildCheckInLink(code),
+    width: 260,
+    height: 260,
+    colorDark: "#102f40",
+    colorLight: "#ffffff",
+    correctLevel: window.QRCode.CorrectLevel.M
+  });
+}
+
 function setAdminCheckInCode(code) {
   activeCheckInCode = code;
   const normalized = String(code || "------").padStart(6, "-");
   document.getElementById("adminCodeFirst").textContent = normalized.slice(0, 3);
   document.getElementById("adminCodeLast").textContent = normalized.slice(3, 6);
   document.getElementById("adminDisplayCode").setAttribute("aria-label", `Check-in code ${normalized}`);
+  renderAdminCheckInQr(String(code || ""));
 }
 
 function updateCheckInTimer() {
@@ -1131,10 +1176,16 @@ function updateCheckInTimer() {
   const minutes = Math.floor(checkInSeconds / 60).toString().padStart(2, "0");
   const seconds = (checkInSeconds % 60).toString().padStart(2, "0");
   document.getElementById("checkInTimer").textContent = `${minutes}:${seconds}`;
+  if (checkInSeconds === 0) {
+    document.querySelector(".checkin-live-label").classList.add("expired");
+    document.getElementById("checkInLiveStatus").textContent = "CHECK-IN EXPIRED";
+  }
 }
 
 function showAdminCheckIn(expiresAt = Date.now() + 15 * 60 * 1000, code = activeCheckInCode || PREVIEW_CHECK_IN_CODE) {
   setAdminCheckInCode(code);
+  document.querySelector(".checkin-live-label").classList.remove("expired");
+  document.getElementById("checkInLiveStatus").textContent = "CHECK-IN OPEN";
   checkInExpiresAt = expiresAt;
   updateCheckInTimer();
   clearInterval(checkInTimerInterval);
@@ -1159,7 +1210,7 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
     const existingExpiry = checkInData?.expiresAt?.toMillis?.() || 0;
     if (checkInData?.checkInOpen && existingExpiry > Date.now() && checkInData.code) {
       showAdminCheckIn(existingExpiry, checkInData.code);
-      showToast("Showing the current check-in code. It has not changed.");
+      showToast("Showing the current QR and backup code. They have not changed.");
       return;
     }
 
@@ -1180,7 +1231,7 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
     }, { merge: true });
     await batch.commit();
     showAdminCheckIn(expiresAt, code);
-    showToast("A new six-digit code is open for 15 minutes.");
+    showToast("A new QR and six-digit backup code are open for 15 minutes.");
   } catch (error) {
     console.error("Could not open check-in", error);
     showToast("Could not open check-in. Confirm you are signed in with the admin account.");
@@ -1191,9 +1242,10 @@ adminCheckInDialog.addEventListener("click", (event) => { if (event.target === a
 adminCheckInDialog.addEventListener("close", () => clearInterval(checkInTimerInterval));
 document.getElementById("copyCheckInCode").addEventListener("click", async () => {
   if (!activeCheckInCode) { showToast("Open check-in before copying a code."); return; }
+  const checkInLink = buildCheckInLink(activeCheckInCode);
   try {
-    await navigator.clipboard.writeText(activeCheckInCode);
-    showToast(`Check-in code copied: ${activeCheckInCode}`);
+    await navigator.clipboard.writeText(checkInLink);
+    showToast("Check-in link copied.");
   } catch {
     showToast(`Check-in code: ${activeCheckInCode}`);
   }
@@ -1303,6 +1355,8 @@ if (["student", "admin"].includes(savedRole)) {
   const destination = validRoutes.includes(initialRoute) ? initialRoute : savedRole === "admin" ? "admin" : "home";
   completeSignIn(savedRole, destination, null, true);
   if (savedRole === "admin" && ["overview", "roster", "points"].includes(localAdminView)) setAdminView(localAdminView);
+  if (savedRole === "admin" && location.protocol === "file:" && previewParams.get("checkinDisplay") === "1") showAdminCheckIn(Date.now() + 15 * 60 * 1000, generateCheckInCode());
+  maybeOpenQrCheckIn(savedRole);
 } else {
   navigate("home");
   initializeFirebaseAuth(validRoutes.includes(initialRoute) ? initialRoute : "home");

@@ -531,24 +531,33 @@
     <dialog class="admin-checkin-dialog" id="adminCheckInDialog">
       <button class="admin-dialog-close" id="closeAdminCheckIn" aria-label="Close display">×</button>
       <div class="admin-checkin-main">
-        <div class="checkin-live-label"><i></i> CHECK-IN OPEN</div>
+        <div class="checkin-live-label"><i></i><span id="checkInLiveStatus">CHECK-IN OPEN</span></div>
         <p class="admin-session-label">NEUROTECH@USC ACADEMY · SESSION 02</p>
-        <h2>Enter this code</h2>
-        <div class="display-code" id="adminDisplayCode" aria-label="Check-in code"><span id="adminCodeFirst">---</span><i></i><span id="adminCodeLast">---</span></div>
-        <p class="display-instruction">Open the Academy website, tap <strong>Check in to session</strong>, and enter the code.</p>
-        <div class="display-url">neurotech-academy-1c5d3.web.app</div>
+        <h2>Scan to check in</h2>
+        <div class="checkin-display-grid">
+          <div class="checkin-qr-card">
+            <div class="checkin-qr" id="adminCheckInQr" aria-label="QR code linking to Session 02 check-in"><span>Generating QR…</span></div>
+            <strong>SCAN WITH YOUR CAMERA</strong>
+          </div>
+          <div class="backup-code-block">
+            <span>OR USE THE 6-DIGIT CODE</span>
+            <div class="display-code" id="adminDisplayCode" aria-label="Check-in code"><span id="adminCodeFirst">---</span><i></i><span id="adminCodeLast">---</span></div>
+            <p>Already on the Academy site? Tap <strong>Check in</strong> and enter this code.</p>
+          </div>
+        </div>
+        <p class="display-instruction">Scan, sign in with Google if needed, then confirm your attendance.</p>
       </div>
       <aside class="admin-checkin-side">
         <div class="checkin-side-top">
           <span>SESSION 02</span>
-          <strong>Fall 2026 Intro Meeting</strong>
+          <strong>Where Signals Come From</strong>
           <small>Thursday, October 1 · 7:00 PM</small>
         </div>
         <div class="checkin-live-count"><strong id="modalAttendanceNumber">0</strong><span>checked in</span></div>
         <div class="checkin-timer"><span>Code expires in</span><strong id="checkInTimer">15:00</strong></div>
         <div class="checkin-admin-buttons">
-          <button class="button light wide" id="copyCheckInCode">Copy code</button>
-          <button class="button danger wide" id="endCheckIn">End check-in</button>
+          <button class="button light wide" id="copyCheckInCode">Copy check-in link</button>
+          <button class="button danger wide" id="endCheckIn">Close check-in</button>
         </div>
       </aside>
     </dialog>
@@ -565,6 +574,7 @@
     <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script defer src="firebase-config.js"></script>
     <script defer src="app.js"></script>
   </body>
