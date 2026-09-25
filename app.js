@@ -1,6 +1,6 @@
 const sessions = [
-  { id: "session01", n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", state: "past", date: "Sep 24", time: "7:00 PM" },
-  { id: "session02", n: "02", title: "Where Signals Come From", desc: "Build a practical map from neurons and electrodes to the signals we can actually measure.", state: "upcoming", date: "Oct 01", time: "7:00 PM" },
+  { id: "session01", n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", state: "past", date: "Sep 24", time: "7:00 PM", startsAt: "2026-09-24T19:00:00-07:00", endsAt: "2026-09-24T19:50:00-07:00" },
+  { id: "session02", n: "02", title: "Where Signals Come From", desc: "Build a practical map from neurons and electrodes to the signals we can actually measure.", state: "upcoming", date: "Oct 01", time: "7:00 PM", startsAt: "2026-10-01T19:00:00-07:00", endsAt: "2026-10-01T19:50:00-07:00" },
 ];
 
 const resources = [
@@ -34,6 +34,23 @@ const SESSION_ID = "session02";
 const SESSION_TITLE = "Where Signals Come From";
 const DEFAULT_SESSION_STATES = { session01: "past", session02: "upcoming" };
 let sessionStates = { ...DEFAULT_SESSION_STATES };
+let sessionClockTimer = null;
+
+function getEffectiveSessionState(session, requestedState = sessionStates[session.id], now = Date.now()) {
+  if (requestedState === "draft" || requestedState === "past") return requestedState;
+  return new Date(session.endsAt).getTime() <= now ? "past" : requestedState;
+}
+
+function scheduleSessionClockRefresh() {
+  clearTimeout(sessionClockTimer);
+  const now = Date.now();
+  const nextBoundary = sessions
+    .map((session) => new Date(session.endsAt).getTime())
+    .filter((time) => time > now)
+    .sort((a, b) => a - b)[0];
+  if (!nextBoundary) return;
+  sessionClockTimer = setTimeout(renderSessionStates, Math.min(nextBoundary - now + 1000, 2147483647));
+}
 
 function navigate(route) {
   if (route === "admin" && currentUserRole !== "admin") {
@@ -172,7 +189,7 @@ document.getElementById("signOutButton").addEventListener("click", async () => {
 
 function renderSessions() {
   const list = document.getElementById("sessionList");
-  const visibleSessions = sessions.filter((session) => sessionStates[session.id] !== "draft");
+  const visibleSessions = sessions.filter((session) => session.state !== "draft");
   list.innerHTML = visibleSessions.map((s) => {
     const state = sessionStates[s.id] || s.state;
     const stateLabel = state === "past" ? "Past" : state === "upcoming" ? "Upcoming" : "Published";
@@ -187,19 +204,31 @@ function renderSessions() {
 }
 
 function renderSessionStates() {
-  sessions.forEach((session) => { session.state = sessionStates[session.id] || session.state; });
+  sessions.forEach((session) => { session.state = getEffectiveSessionState(session); });
   renderSessions();
 
-  const upcoming = sessions.find((session) => session.state === "upcoming") || sessions.find((session) => session.state === "published");
-  if (upcoming) {
-    document.getElementById("homeUpcomingEyebrow").innerHTML = `<span class="live-dot"></span> Session ${upcoming.n} · upcoming`;
-    document.getElementById("homeUpcomingDate").textContent = `${upcoming.date.toUpperCase()} · ${upcoming.time}`;
-    document.getElementById("homeUpcomingNumber").textContent = upcoming.n;
-    document.getElementById("homeUpcomingKicker").textContent = `SESSION ${upcoming.n} · ${upcoming.n === "02" ? "SIGNAL FOUNDATIONS" : "ACADEMY MEETING"}`;
-    document.getElementById("homeUpcomingTitle").textContent = upcoming.title;
-    document.getElementById("homeUpcomingDescription").textContent = upcoming.desc;
+  const futureSession = sessions.find((session) => session.state === "upcoming")
+    || sessions.filter((session) => session.state === "published" && new Date(session.endsAt).getTime() > Date.now()).sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt))[0];
+  const latestPast = [...sessions].filter((session) => session.state === "past").sort((a, b) => new Date(b.startsAt) - new Date(a.startsAt))[0];
+  const featuredSession = futureSession || latestPast;
+  if (featuredSession) {
+    const isPast = featuredSession.state === "past";
+    document.getElementById("homeUpcomingEyebrow").innerHTML = isPast
+      ? `<span class="past-dot">✓</span> Session ${featuredSession.n} · past`
+      : `<span class="live-dot"></span> Session ${featuredSession.n} · upcoming`;
+    document.getElementById("homeSessionHeading").textContent = isPast ? "Past session" : "Next session";
+    document.getElementById("homeSessionCard").classList.toggle("is-past", isPast);
+    document.getElementById("homeUpcomingDate").textContent = `${featuredSession.date.toUpperCase()} · ${featuredSession.time}`;
+    document.getElementById("homeUpcomingNumber").textContent = featuredSession.n;
+    document.getElementById("homeUpcomingKicker").textContent = `SESSION ${featuredSession.n} · ${isPast ? "SESSION ARCHIVE" : featuredSession.n === "02" ? "SIGNAL FOUNDATIONS" : "ACADEMY MEETING"}`;
+    document.getElementById("homeUpcomingTitle").textContent = featuredSession.title;
+    document.getElementById("homeUpcomingDescription").textContent = featuredSession.desc;
+    document.getElementById("homeSessionTime").textContent = featuredSession.time;
+    document.getElementById("homePrepTitle").textContent = isPast ? "Session complete" : "Before you arrive";
+    document.getElementById("homePrepText").textContent = isPast ? "Review the slides and session materials whenever you need them." : "Bring a laptop. Session materials will appear here when published.";
+    document.getElementById("homePrepLink").textContent = isPast ? "Review materials →" : "Course outline →";
   }
-  const sessionTwoIsUpcoming = sessionStates.session02 === "upcoming";
+  const sessionTwoIsUpcoming = sessions.find((session) => session.id === SESSION_ID)?.state === "upcoming";
   const adminCheckInButton = document.getElementById("adminOpenCheckIn");
   const learnerCheckInButton = document.getElementById("openCheckIn");
   adminCheckInButton.disabled = !sessionTwoIsUpcoming;
@@ -253,6 +282,31 @@ function renderSessionStates() {
       calendar.querySelector("small").textContent = `S${session.n} · ${state.toUpperCase()}`;
     }
   });
+  const nextScheduleSession = sessions.find((session) => session.state === "upcoming")
+    || sessions.find((session) => session.state === "published" && new Date(session.endsAt).getTime() > Date.now());
+  const pastSessionNumbers = sessions.filter((session) => session.state === "past").map((session) => `Session ${session.n}`);
+  const scheduleNote = document.getElementById("calendarScheduleNote");
+  if (scheduleNote) {
+    const archiveText = pastSessionNumbers.length ? `${pastSessionNumbers.join(" and ")} ${pastSessionNumbers.length === 1 ? "is" : "are"} archived.` : "No sessions are archived yet.";
+    const nextText = nextScheduleSession ? ` Session ${nextScheduleSession.n} is next on ${nextScheduleSession.date} at ${nextScheduleSession.time}.` : " There is no upcoming session published yet.";
+    scheduleNote.innerHTML = `<strong>Current schedule:</strong> ${archiveText}${nextText}`;
+  }
+  const sessionOne = sessions.find((session) => session.id === "session01");
+  const sessionOneStatus = document.getElementById("session01Status");
+  if (sessionOne && sessionOneStatus) {
+    sessionOneStatus.className = `status-line ${sessionOne.state}`;
+    sessionOneStatus.querySelector("strong").textContent = sessionOne.state === "past" ? "Past session" : sessionOne.state === "upcoming" ? "Upcoming session" : sessionOne.state === "draft" ? "Draft session" : "Published session";
+    document.getElementById("sessionCheckIn").disabled = sessionOne.state !== "upcoming";
+    document.getElementById("sessionCheckIn").textContent = sessionOne.state === "past" ? "Check-in closed" : sessionOne.state === "upcoming" ? "Check in" : "Check-in is not open";
+  }
+  const sessionTwo = sessions.find((session) => session.id === "session02");
+  const sessionOneNextCard = document.getElementById("session01NextCard");
+  if (sessionTwo && sessionOneNextCard) sessionOneNextCard.hidden = !["published", "upcoming"].includes(sessionTwo.state);
+  if (sessionOne) {
+    resources[0].type = sessionOne.state === "past" ? "past" : "current";
+    renderResources();
+  }
+  scheduleSessionClockRefresh();
 }
 document.querySelectorAll("[data-learn-view]").forEach((button) => button.addEventListener("click", () => {
   document.querySelectorAll("[data-learn-view]").forEach((item) => item.classList.toggle("active", item === button));
@@ -329,7 +383,7 @@ function renderLearnerProgress(input) {
   document.getElementById("pointsHistory").innerHTML = sortedRecords.length
     ? sortedRecords.map((record) => `<li><span>${safeText(record.activityTitle || record.sessionTitle || "Participation activity")}</span><strong>+${Number(record.points || 0)}</strong></li>`).join("")
     : '<li><span>Your first activity will appear here.</span><strong>—</strong></li>';
-  document.getElementById("openCheckIn").textContent = sessionStates.session02 === "upcoming"
+  document.getElementById("openCheckIn").textContent = getEffectiveSessionState(sessions.find((session) => session.id === SESSION_ID)) === "upcoming"
     ? hasCheckedIn ? "Checked in ✓" : "Check in when class opens"
     : "Check-in is not open";
   document.getElementById("sessionCheckIn").textContent = hasCheckedIn ? "Checked in ✓" : "Check in";
@@ -468,7 +522,7 @@ function startLiveData(role, user) {
       const isOpen = Boolean(data?.checkInOpen && (data.expiresAt?.toMillis?.() || 0) > Date.now());
       if (isOpen && data.code) setAdminCheckInCode(data.code);
       if (!isOpen) activeCheckInCode = "";
-      const canOpen = sessionStates.session02 === "upcoming";
+      const canOpen = getEffectiveSessionState(sessions.find((session) => session.id === SESSION_ID)) === "upcoming";
       document.getElementById("adminOpenCheckIn").disabled = !canOpen;
       document.getElementById("adminOpenCheckIn").textContent = canOpen ? isOpen ? "Show check-in code" : "Open check-in" : "Set Session 02 upcoming";
     });

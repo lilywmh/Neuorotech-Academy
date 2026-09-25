@@ -110,9 +110,9 @@
         </div>
 
         <div class="dashboard-grid reveal delay-2">
-          <article class="next-card">
+          <article class="next-card" id="homeSessionCard">
             <div class="section-heading">
-              <div><span class="section-number">01</span><h2>Next session</h2></div>
+              <div><span class="section-number">01</span><h2 id="homeSessionHeading">Next session</h2></div>
               <span class="session-date" id="homeUpcomingDate">OCT 01 · 7:00 PM</span>
             </div>
             <div class="lesson-summary">
@@ -121,13 +121,13 @@
                 <p class="kicker" id="homeUpcomingKicker">SESSION 02 · SIGNAL FOUNDATIONS</p>
                 <h3 id="homeUpcomingTitle">Where Signals Come From</h3>
                 <p id="homeUpcomingDescription">Build a practical map from neurons and electrodes to the signals we can actually measure.</p>
-                <div class="lesson-meta"><span>7:00 PM</span><span>Bring a laptop</span><span>In person</span></div>
+                <div class="lesson-meta"><span id="homeSessionTime">7:00 PM</span><span>Bring a laptop</span><span>In person</span></div>
               </div>
             </div>
             <div class="prep-strip">
               <span class="check-icon">✓</span>
-              <div><strong>Before you arrive</strong><small>Bring a laptop. Session materials will appear here when published.</small></div>
-              <button class="prep-link" data-route="learn">Course outline →</button>
+              <div><strong id="homePrepTitle">Before you arrive</strong><small id="homePrepText">Bring a laptop. Session materials will appear here when published.</small></div>
+              <button class="prep-link" id="homePrepLink" data-route="learn">Course outline →</button>
             </div>
           </article>
 
@@ -253,7 +253,7 @@
               </div>
             </section>
           </div>
-          <p class="calendar-note"><strong>Current schedule:</strong> Session 01 is archived; Session 02 is next on October 1 at 7:00 PM. Admins control which sessions are published and upcoming.</p>
+          <p class="calendar-note" id="calendarScheduleNote"><strong>Current schedule:</strong> Session 01 is archived; Session 02 is next on October 1 at 7:00 PM. Admins control which sessions are published and upcoming.</p>
         </div>
       </section>
 
@@ -325,7 +325,7 @@
               </div>
             </section>
 
-            <nav class="next-session-card">
+            <nav class="next-session-card" id="session01NextCard">
               <div><small>NEXT SESSION · OCTOBER 1</small><strong>Where Signals Come From</strong></div>
               <button data-route="learn">View course outline →</button>
             </nav>
@@ -334,7 +334,7 @@
           <aside class="session-sidebar">
             <div class="session-sidebar-card">
               <span class="content-label">SESSION STATUS</span>
-              <div class="status-line past"><i></i><strong>Past session</strong></div>
+              <div class="status-line past" id="session01Status"><i></i><strong>Past session</strong></div>
               <button class="button primary wide" id="sessionCheckIn" disabled>Check-in closed</button>
             </div>
             <div class="session-sidebar-card prep-card">

@@ -108,6 +108,10 @@ body::before { opacity: .28; background-size: 56px 56px; }
 }
 .next-card, .progress-card { padding: 32px; }
 .next-card { box-shadow: inset 0 4px 0 rgba(242,95,92,.82), var(--shadow-soft); }
+.next-card.is-past { box-shadow: inset 0 4px 0 rgba(92,184,92,.82), var(--shadow-soft); }
+.next-card.is-past .lesson-index { color: var(--success); }
+.next-card.is-past .prep-strip { background: linear-gradient(135deg, #244d3a, #173b30); }
+.past-dot { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--success); font-size: 10px; }
 .progress-card { box-shadow: inset 0 4px 0 rgba(80,198,220,.9), var(--shadow-soft); }
 .section-heading h2, .lesson-summary h3, .journey-heading h2, .contact-heading h2, .reach-card h3, .resource-card h3 {
   font-family: var(--serif);
