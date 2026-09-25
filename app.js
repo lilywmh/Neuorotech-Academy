@@ -38,6 +38,7 @@ let adminAllActivity = [];
 let adminRosterRows = [];
 let memberRosterFilter = "all";
 let pendingCsvRows = [];
+let checkInEvents = [];
 let currentAdminView = "overview";
 let pendingCheckInCode = (new URLSearchParams(location.search).get("checkin") || "").replace(/\D/g, "").slice(0, 6);
 let pendingCheckInSession = (new URLSearchParams(location.search).get("session") || "").replace(/[^a-zA-Z0-9_-]/g, "");
@@ -45,11 +46,57 @@ const PREVIEW_CHECK_IN_CODE = "092426";
 let activeSessionId = "session02";
 let activeSessionTitle = "Where Signals Come From";
 let activeSessionNumber = "02";
+let activeCheckInKind = "curriculum";
+let activeCheckInPoints = 2;
+let adminSelectedCheckInTargetId = "session02";
 let subscribedAdminSessionId = "";
 const DEFAULT_SESSION_STATES = { session01: "past", session02: "upcoming" };
 let sessionStates = { ...DEFAULT_SESSION_STATES };
 let sessionStateUpdatedAt = {};
 let sessionClockTimer = null;
+
+function getCheckInTargets() {
+  return [...sessions, ...checkInEvents].sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
+}
+
+function getCheckInTarget(id = activeSessionId) {
+  return getCheckInTargets().find((item) => item.id === id);
+}
+
+function checkInTargetLabel(target = getCheckInTarget()) {
+  return target?.kind === "event" ? "EVENT" : `SESSION ${target?.n || activeSessionNumber}`;
+}
+
+function setActiveCheckInTarget(target) {
+  if (!target) return;
+  activeSessionId = target.id;
+  activeSessionTitle = target.title;
+  activeSessionNumber = target.n || "EVENT";
+  activeCheckInKind = target.kind === "event" ? "event" : "curriculum";
+  activeCheckInPoints = Number(target.points ?? 2);
+}
+
+function academyDateTime(dateValue, timeValue) {
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const [hour, minute] = timeValue.split(":").map(Number);
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute);
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: ACADEMY_TIME_ZONE,
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(new Date(utcGuess)).map((part) => [part.type, part.value]));
+  const represented = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+  return new Date(utcGuess - (represented - utcGuess));
+}
+
+function dateInputValue(iso) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: ACADEMY_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(iso)).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function timeInputValue(iso) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: ACADEMY_TIME_ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(iso)).map((part) => [part.type, part.value]));
+  return `${parts.hour}:${parts.minute}`;
+}
 
 function getEffectiveSessionState(session, requestedState = sessionStates[session.id] ?? session.state ?? "draft", now = Date.now()) {
   const startsAt = new Date(session.startsAt).getTime();
@@ -82,6 +129,8 @@ function navigate(route) {
   const isAdminRoute = currentUserRole === "admin" && route === "admin";
   document.body.classList.toggle("admin-mode", isAdminRoute);
   document.querySelectorAll("[data-role-view]").forEach((button) => button.classList.toggle("active", button.dataset.roleView === (isAdminRoute ? "admin" : "learner")));
+  const adminViewButton = document.querySelector('[data-role-view="admin"]');
+  if (adminViewButton) adminViewButton.textContent = isAdminRoute ? "Admin" : "← Back to admin";
   pages.forEach((page) => page.classList.toggle("active", page.id === `${route}-page`));
   const navRoute = route === "session" ? "learn" : route;
   routeButtons.forEach((button) => {
@@ -274,10 +323,12 @@ function renderSessions() {
     const state = sessionStates[s.id] || s.state;
     const stateLabel = state === "past" ? "Past" : state === "upcoming" ? "Upcoming" : "Published";
     const actionLabel = s.n === "01" ? "Open →" : s.url ? "Materials ↗" : "Details soon";
+    const materialLinks = [...new Set([s.url, ...(Array.isArray(s.resourceLinks) ? s.resourceLinks : [])].filter(Boolean))];
+    const resourceMarkup = materialLinks.length ? `<div class="session-resource-links">${materialLinks.map((url, index) => `<a href="${safeText(url)}" target="_blank" rel="noreferrer">${index === 0 ? "Slides / materials" : `Resource ${index + 1}`} ↗</a>`).join("")}</div>` : "";
     return `
     <article class="session-row">
       <span class="num">${safeText(s.n)}</span>
-      <div><small class="session-step">SESSION ${safeText(s.n)}</small><h3>${safeText(s.title)}</h3><p>${safeText(s.desc)}</p></div>
+      <div><small class="session-step">SESSION ${safeText(s.n)}</small><h3>${safeText(s.title)}</h3><p>${safeText(s.desc)}</p>${resourceMarkup}</div>
       <span class="status ${state === "past" ? "done" : state === "upcoming" ? "now" : ""}">${stateLabel} · ${safeText(s.date)} · ${safeText(s.time)}</span>
       <button class="session-action ${!s.url && s.n !== "01" ? "locked" : ""}" data-session-action="${safeText(s.n)}">${actionLabel}</button>
     </article>`;
@@ -318,11 +369,31 @@ function renderAdminSessionManager() {
   manager.innerHTML = [...sessions].sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt)).map((session) => {
     const state = session.state || sessionStates[session.id] || "draft";
     return `<article class="manager-card${state === "upcoming" ? " featured" : ""}" data-manager-session="${safeText(session.id)}">
-      <div class="manager-card-head"><span class="manager-number">${safeText(session.n)}</span><span class="session-state ${state}" id="adminState${safeText(session.n)}">${state.toUpperCase()}</span></div>
+      <div class="manager-card-head"><span class="manager-number">${safeText(session.n)}</span><div><span class="session-state ${state}" id="adminState${safeText(session.n)}">${state.toUpperCase()}</span><button class="manager-edit-button" type="button" data-edit-session="${safeText(session.id)}">Edit details →</button></div></div>
       <div class="manager-card-body"><div class="manager-session-copy"><small>${safeText(session.date.toUpperCase())} · ${safeText(session.time)}</small><h3>${safeText(session.title)}</h3><p>${safeText(session.desc)}</p></div><div class="manager-visibility"><small>LEARNER VIEW</small><b>${visibilityLabel[state]}</b></div></div>
       <div class="manager-control-row"><span>Set status</span><div class="manager-actions" role="group" aria-label="Set Session ${safeText(session.n)} status"><button data-set-session="${safeText(session.id)}" data-state="draft">Draft</button><button data-set-session="${safeText(session.id)}" data-state="published">Published</button><button data-set-session="${safeText(session.id)}" data-state="upcoming">Upcoming</button><button data-set-session="${safeText(session.id)}" data-state="past">Past</button></div></div>
     </article>`;
   }).join("");
+}
+
+function renderCheckInTargets() {
+  const select = document.getElementById("checkInTargetSelect");
+  if (!select) return;
+  const targets = getCheckInTargets();
+  if (!targets.some((item) => item.id === adminSelectedCheckInTargetId)) {
+    adminSelectedCheckInTargetId = sessions.find((item) => item.state === "upcoming")?.id || targets[0]?.id || "";
+  }
+  select.innerHTML = targets.map((target) => {
+    const type = target.kind === "event" ? "Event" : `Session ${target.n}`;
+    const state = target.kind === "event" ? "one-time" : target.state;
+    return `<option value="${safeText(target.id)}" ${target.id === adminSelectedCheckInTargetId ? "selected" : ""}>${safeText(type)} · ${safeText(target.title)} · ${safeText(state)}</option>`;
+  }).join("");
+  const selected = targets.find((item) => item.id === adminSelectedCheckInTargetId);
+  if (!selected) return;
+  document.getElementById("selectedCheckInType").textContent = checkInTargetLabel(selected);
+  document.getElementById("selectedCheckInTitle").textContent = selected.title;
+  document.getElementById("selectedCheckInMeta").textContent = `${selected.date} · ${selected.time} · ${Number(selected.points ?? 2)} points`;
+  document.getElementById("attendanceTargetName").textContent = `${checkInTargetLabel(selected)} · ${selected.title}`;
 }
 
 function renderSessionStates() {
@@ -330,6 +401,7 @@ function renderSessionStates() {
   renderSessions();
   renderCalendar();
   renderAdminSessionManager();
+  renderCheckInTargets();
 
   const visibleSessions = sessions.filter((session) => session.state !== "draft");
   const stateCounts = visibleSessions.reduce((counts, session) => {
@@ -373,21 +445,20 @@ function renderSessionStates() {
     document.getElementById("homePrepLink").textContent = isPast ? "Review materials →" : "Course outline →";
   }
   const checkInSession = sessions.find((session) => session.state === "upcoming");
-  if (checkInSession) {
-    activeSessionId = checkInSession.id;
-    activeSessionTitle = checkInSession.title;
-    activeSessionNumber = checkInSession.n;
+  if (currentUserRole === "admin") {
+    setActiveCheckInTarget(getCheckInTarget(adminSelectedCheckInTargetId) || checkInSession);
+  } else if (checkInSession && activeCheckInKind !== "event") {
+    setActiveCheckInTarget(checkInSession);
   }
   const sessionTwoIsUpcoming = Boolean(checkInSession);
   const adminCheckInButton = document.getElementById("adminOpenCheckIn");
   const learnerCheckInButton = document.getElementById("openCheckIn");
-  adminCheckInButton.disabled = !sessionTwoIsUpcoming;
+  adminCheckInButton.disabled = currentUserRole === "admin" ? !getCheckInTarget(adminSelectedCheckInTargetId) : !sessionTwoIsUpcoming;
   learnerCheckInButton.disabled = !sessionTwoIsUpcoming;
-  if (!sessionTwoIsUpcoming) {
-    adminCheckInButton.textContent = "Set a session upcoming";
+  if (!sessionTwoIsUpcoming && currentUserRole !== "admin") {
     learnerCheckInButton.textContent = "Check-in is not open";
   } else if (!activeCheckInCode) {
-    adminCheckInButton.textContent = "Open check-in";
+    if (currentUserRole === "admin") adminCheckInButton.textContent = "Open check-in";
     learnerCheckInButton.textContent = hasCheckedIn ? "Checked in ✓" : "Check in when class opens";
   }
 
@@ -543,7 +614,9 @@ function renderLearnerProgress(input) {
   document.getElementById("pointsHistory").innerHTML = sortedRecords.length
     ? sortedRecords.map((record) => `<li><span>${safeText(record.activityTitle || record.sessionTitle || "Participation activity")}</span><strong>+${Number(record.points || 0)}</strong></li>`).join("")
     : '<li><span>Your first activity will appear here.</span><strong>—</strong></li>';
-  document.getElementById("openCheckIn").textContent = getEffectiveSessionState(sessions.find((session) => session.id === activeSessionId)) === "upcoming"
+  const activeCurriculumSession = sessions.find((session) => session.id === activeSessionId);
+  const learnerSessionIsUpcoming = activeCurriculumSession && getEffectiveSessionState(activeCurriculumSession) === "upcoming";
+  document.getElementById("openCheckIn").textContent = learnerSessionIsUpcoming
     ? hasCheckedIn ? "Checked in ✓" : "Check in when class opens"
     : "Check-in is not open";
   document.getElementById("sessionCheckIn").textContent = hasCheckedIn ? "Checked in ✓" : "Check in";
@@ -757,12 +830,24 @@ function openAdminForm(dialogId) {
   if (formDialog && !formDialog.open) formDialog.showModal();
 }
 
+function openSessionEditor(sessionId) {
+  const session = sessions.find((item) => item.id === sessionId);
+  if (!session) return;
+  document.getElementById("editSessionId").value = session.id;
+  document.getElementById("editSessionTitle").value = session.title;
+  document.getElementById("editSessionDate").value = dateInputValue(session.startsAt);
+  document.getElementById("editSessionTime").value = timeInputValue(session.startsAt);
+  document.getElementById("editSessionDescription").value = session.desc || "";
+  document.getElementById("editSessionLink").value = session.url || "";
+  document.getElementById("editSessionResources").value = Array.isArray(session.resourceLinks) ? session.resourceLinks.join("\n") : "";
+  document.getElementById("editSessionStatus").textContent = "";
+  openAdminForm("editSessionDialog");
+}
+
 document.querySelectorAll("[data-close-admin-form]").forEach((button) => button.addEventListener("click", () => document.getElementById(button.dataset.closeAdminForm).close()));
 document.getElementById("addLearnerButton").addEventListener("click", () => openAdminForm("addLearnerDialog"));
 document.getElementById("addSessionButton").addEventListener("click", () => openAdminForm("addSessionDialog"));
-document.getElementById("createSessionAction").addEventListener("click", () => { setAdminView("sessions"); openAdminForm("addSessionDialog"); });
-document.getElementById("addLearnerAction").addEventListener("click", () => { setAdminView("roster"); openAdminForm("addLearnerDialog"); });
-document.getElementById("importPointsAction").addEventListener("click", () => setAdminView("points"));
+document.getElementById("newCheckInEvent").addEventListener("click", () => openAdminForm("newCheckInEventDialog"));
 
 document.getElementById("addLearnerForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -828,11 +913,11 @@ document.getElementById("addSessionForm").addEventListener("submit", async (even
   const nextNumber = Math.max(0, ...sessions.map((session) => Number(session.n) || 0)) + 1;
   const n = String(nextNumber).padStart(2, "0");
   const id = `session${n}`;
-  const starts = new Date(`${dateValue}T${timeValue}:00`);
+  const starts = academyDateTime(dateValue, timeValue);
   const ends = new Date(starts.getTime() + 50 * 60 * 1000);
   const date = new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts);
   const time = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts);
-  const session = { id, n, title, desc, state: "draft", date, time, year: starts.getFullYear(), timeZone: ACADEMY_TIME_ZONE, startsAt: starts.toISOString(), endsAt: ends.toISOString(), url, dynamic: true };
+  const session = { id, n, title, desc, state: "draft", date, time, year: Number(dateValue.slice(0, 4)), timeZone: ACADEMY_TIME_ZONE, startsAt: starts.toISOString(), endsAt: ends.toISOString(), url, dynamic: true };
   if (!currentFirebaseUser || !firebaseDb) {
     sessions.push(session); sessionStates[id] = "draft"; renderSessionStates(); event.target.reset(); status.textContent = "Preview draft created."; setTimeout(() => document.getElementById("addSessionDialog").close(), 550); return;
   }
@@ -856,6 +941,99 @@ document.getElementById("addSessionForm").addEventListener("submit", async (even
   } finally { submit.disabled = false; }
 });
 
+document.getElementById("editSessionForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const id = document.getElementById("editSessionId").value;
+  const session = sessions.find((item) => item.id === id);
+  if (!session) return;
+  const title = document.getElementById("editSessionTitle").value.trim();
+  const dateValue = document.getElementById("editSessionDate").value;
+  const timeValue = document.getElementById("editSessionTime").value;
+  const desc = document.getElementById("editSessionDescription").value.trim();
+  const url = document.getElementById("editSessionLink").value.trim();
+  const resourceLinks = document.getElementById("editSessionResources").value.split(/\r?\n/).map((link) => link.trim()).filter((link) => /^https?:\/\//i.test(link));
+  const starts = academyDateTime(dateValue, timeValue);
+  const ends = new Date(starts.getTime() + 50 * 60 * 1000);
+  const updates = {
+    title, desc, url, resourceLinks,
+    kind: "curriculum",
+    date: new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts),
+    time: new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts),
+    year: Number(dateValue.slice(0, 4)),
+    timeZone: ACADEMY_TIME_ZONE,
+    startsAt: starts.toISOString(),
+    endsAt: ends.toISOString()
+  };
+  const status = document.getElementById("editSessionStatus");
+  const submit = event.submitter;
+  if (!currentFirebaseUser || !firebaseDb) {
+    Object.assign(session, updates);
+    renderSessionStates();
+    status.textContent = "Preview changes saved.";
+    return;
+  }
+  submit.disabled = true;
+  status.textContent = "Saving…";
+  try {
+    await firebaseDb.collection("sessions").doc(id).set({ ...updates, n: session.n, state: sessionStates[id] || session.state || "draft", updatedAt: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: currentFirebaseUser.email || "admin" }, { merge: true });
+    status.textContent = "Saved. Learner views are updated.";
+    showToast(`Session ${session.n} updated.`);
+    setTimeout(() => document.getElementById("editSessionDialog").close(), 650);
+  } catch (error) {
+    console.error("Could not update session", error);
+    status.textContent = "Could not save this session. Try again.";
+  } finally { submit.disabled = false; }
+});
+
+document.getElementById("newCheckInEventForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const title = document.getElementById("newEventTitle").value.trim();
+  const dateValue = document.getElementById("newEventDate").value;
+  const timeValue = document.getElementById("newEventTime").value;
+  const points = Number(document.getElementById("newEventPoints").value || 0);
+  const starts = academyDateTime(dateValue, timeValue);
+  const id = `event_${dateValue.replaceAll("-", "")}_${timeValue.replace(":", "")}_${Date.now().toString(36)}`;
+  const eventRecord = {
+    id, kind: "event", title, points,
+    date: new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts),
+    time: new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: ACADEMY_TIME_ZONE }).format(starts),
+    startsAt: starts.toISOString(),
+    endsAt: new Date(starts.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+    timeZone: ACADEMY_TIME_ZONE
+  };
+  const status = document.getElementById("newCheckInEventStatus");
+  const submit = event.submitter;
+  if (!currentFirebaseUser || !firebaseDb) {
+    checkInEvents.push(eventRecord);
+    adminSelectedCheckInTargetId = id;
+    setActiveCheckInTarget(eventRecord);
+    renderCheckInTargets();
+    status.textContent = "Preview event created and selected.";
+    return;
+  }
+  submit.disabled = true;
+  status.textContent = "Creating event…";
+  try {
+    await firebaseDb.collection("sessions").doc(id).set({ ...eventRecord, createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentFirebaseUser.email || "admin" });
+    adminSelectedCheckInTargetId = id;
+    if (!checkInEvents.some((item) => item.id === id)) checkInEvents.push(eventRecord);
+    setActiveCheckInTarget(eventRecord);
+    renderCheckInTargets();
+    subscribedAdminSessionId = "";
+    subscribeAdminCurrentSession();
+    event.target.reset();
+    document.getElementById("newEventTime").value = "19:00";
+    document.getElementById("newEventPoints").value = "2";
+    document.getElementById("newEventDate").value = dateInputValue(new Date().toISOString());
+    status.textContent = "Event created and selected.";
+    showToast("Event ready for check-in.");
+    setTimeout(() => document.getElementById("newCheckInEventDialog").close(), 650);
+  } catch (error) {
+    console.error("Could not create event", error);
+    status.textContent = "Could not create the event. Try again.";
+  } finally { submit.disabled = false; }
+});
+
 function setAdminView(view) {
   currentAdminView = view;
   document.querySelectorAll("[data-admin-view]").forEach((button) => button.classList.toggle("active", button.dataset.adminView === view));
@@ -865,6 +1043,17 @@ function setAdminView(view) {
 }
 
 document.querySelectorAll("[data-admin-view]").forEach((button) => button.addEventListener("click", () => setAdminView(button.dataset.adminView)));
+document.getElementById("checkInTargetSelect").addEventListener("change", (event) => {
+  const target = getCheckInTarget(event.target.value);
+  if (!target) return;
+  adminSelectedCheckInTargetId = target.id;
+  setActiveCheckInTarget(target);
+  activeCheckInCode = "";
+  renderCheckInTargets();
+  renderRoster([]);
+  subscribedAdminSessionId = "";
+  subscribeAdminCurrentSession();
+});
 
 function renderPointsWorkspace() {
   const picker = document.getElementById("activityLearnerPicker");
@@ -1053,13 +1242,13 @@ document.getElementById("pointsLedgerBody").addEventListener("click", async (eve
 
 function subscribeAdminCurrentSession() {
   if (!firebaseDb || currentUserRole !== "admin") return;
-  const currentSession = sessions.find((session) => session.id === activeSessionId && session.state === "upcoming");
-  if (!currentSession) {
+  const currentTarget = getCheckInTarget(activeSessionId);
+  if (!currentTarget) {
     unsubscribeRoster?.(); unsubscribeRoster = null;
     unsubscribeSession?.(); unsubscribeSession = null;
     subscribedAdminSessionId = "";
     document.getElementById("adminOpenCheckIn").disabled = true;
-    document.getElementById("adminOpenCheckIn").textContent = "Set a session upcoming";
+    document.getElementById("adminOpenCheckIn").textContent = "Choose a session or event";
     return;
   }
   if (subscribedAdminSessionId === activeSessionId) return;
@@ -1076,7 +1265,7 @@ function subscribeAdminCurrentSession() {
     if (isOpen && data.code) setAdminCheckInCode(data.code);
     if (!isOpen) activeCheckInCode = "";
     document.getElementById("adminOpenCheckIn").disabled = false;
-    document.getElementById("adminOpenCheckIn").textContent = isOpen ? "Show check-in code" : `Open Session ${activeSessionNumber} check-in`;
+    document.getElementById("adminOpenCheckIn").textContent = isOpen ? "Show check-in code" : `Open ${checkInTargetLabel(currentTarget)} check-in`;
   }, (error) => { console.error("Could not load current check-in", error); showToast("Check-in status could not load."); });
 }
 
@@ -1109,13 +1298,28 @@ function startLiveData(role, user) {
 
   unsubscribeCurriculumSessions = firebaseDb.collection("sessions").onSnapshot((snapshot) => {
     for (let index = sessions.length - 1; index >= 0; index -= 1) if (sessions[index].dynamic) sessions.splice(index, 1);
+    checkInEvents = [];
     snapshot.docs.forEach((item) => {
       const data = item.data();
-      if (data.kind !== "curriculum" || !data.startsAt || !data.title) return;
-      sessions.push({ ...data, id: item.id, n: data.n || item.id.replace(/\D/g, "").padStart(2, "0"), state: sessionStates[item.id] || data.state || "draft", dynamic: true });
+      if (!data.startsAt || !data.title) return;
+      if (data.kind === "event") {
+        checkInEvents.push({ ...data, id: item.id, kind: "event" });
+        return;
+      }
+      if (data.kind !== "curriculum") return;
+      const existing = sessions.find((session) => session.id === item.id);
+      const normalized = { ...data, id: item.id, n: data.n || item.id.replace(/\D/g, "").padStart(2, "0"), state: sessionStates[item.id] || data.state || "draft" };
+      if (existing) Object.assign(existing, normalized);
+      else sessions.push({ ...normalized, dynamic: true });
     });
     sessions.sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
+    checkInEvents.sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
     renderSessionStates();
+    if (currentUserRole === "admin") {
+      const selected = getCheckInTarget(adminSelectedCheckInTargetId);
+      if (selected) setActiveCheckInTarget(selected);
+      subscribeAdminCurrentSession();
+    }
     maybeOpenQrCheckIn(role);
   }, (error) => console.error("Could not load curriculum sessions", error));
 
@@ -1149,8 +1353,14 @@ function startLiveData(role, user) {
 }
 
 document.getElementById("adminSessionManager").addEventListener("click", async (event) => {
+  const editButton = event.target.closest("[data-edit-session]");
+  if (editButton) { openSessionEditor(editButton.dataset.editSession); return; }
   const button = event.target.closest("[data-set-session]");
-  if (!button) return;
+  if (!button) {
+    const card = event.target.closest("[data-manager-session]");
+    if (card) openSessionEditor(card.dataset.managerSession);
+    return;
+  }
   const sessionId = button.dataset.setSession;
   const nextState = button.dataset.state;
   const nextStates = { ...sessionStates };
@@ -1229,9 +1439,10 @@ function setCheckInSuccess() {
 }
 
 function openDialog() {
-  document.getElementById("learnerCheckInLabel").textContent = `SESSION ${activeSessionNumber} · CHECK-IN`;
-  document.getElementById("checkInSuccessTitle").textContent = `Session ${activeSessionNumber}`;
+  document.getElementById("learnerCheckInLabel").textContent = `${checkInTargetLabel()} · CHECK-IN`;
+  document.getElementById("checkInSuccessTitle").textContent = checkInTargetLabel();
   document.getElementById("checkInSuccessSession").textContent = activeSessionTitle;
+  document.getElementById("checkInSuccessPoints").textContent = `+${activeCheckInPoints} participation points`;
   codeStep.classList.toggle("active", !hasCheckedIn);
   successStep.classList.toggle("active", hasCheckedIn);
   inputs.forEach((input) => { input.value = ""; });
@@ -1246,11 +1457,9 @@ function openDialog() {
 function maybeOpenQrCheckIn(role) {
   if (role !== "student" || pendingCheckInCode.length !== 6) return;
   if (pendingCheckInSession) {
-    const linkedSession = sessions.find((session) => session.id === pendingCheckInSession);
+    const linkedSession = getCheckInTarget(pendingCheckInSession);
     if (!linkedSession) return;
-    activeSessionId = linkedSession.id;
-    activeSessionTitle = linkedSession.title;
-    activeSessionNumber = linkedSession.n;
+    setActiveCheckInTarget(linkedSession);
   }
   const code = pendingCheckInCode;
   pendingCheckInCode = "";
@@ -1328,7 +1537,7 @@ submitCode.addEventListener("click", async () => {
       name: currentFirebaseUser.displayName || currentFirebaseUser.email?.split("@")[0] || "Academy member",
       sessionId: activeSessionId,
       sessionTitle: activeSessionTitle,
-      points: 2,
+      points: activeCheckInPoints,
       checkInCode: code,
       checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -1408,13 +1617,14 @@ function updateCheckInTimer() {
 
 function showAdminCheckIn(expiresAt = Date.now() + 15 * 60 * 1000, code = activeCheckInCode || PREVIEW_CHECK_IN_CODE) {
   setAdminCheckInCode(code);
-  const session = sessions.find((item) => item.id === activeSessionId);
-  document.getElementById("adminCheckInSessionLabel").textContent = `SESSION ${activeSessionNumber}`;
-  document.getElementById("adminCheckInSideLabel").textContent = `SESSION ${activeSessionNumber}`;
+  const session = getCheckInTarget(activeSessionId);
+  document.getElementById("adminCheckInSessionLabel").textContent = checkInTargetLabel(session);
+  document.getElementById("adminCheckInSideLabel").textContent = checkInTargetLabel(session);
   document.getElementById("adminCheckInSideTitle").textContent = activeSessionTitle;
   document.getElementById("adminCheckInSideDate").textContent = session ? `${session.date} · ${session.time}` : "Current Academy session";
-  document.getElementById("checkInSuccessTitle").textContent = `Session ${activeSessionNumber}`;
+  document.getElementById("checkInSuccessTitle").textContent = checkInTargetLabel(session);
   document.getElementById("checkInSuccessSession").textContent = activeSessionTitle;
+  document.getElementById("checkInSuccessPoints").textContent = `+${activeCheckInPoints} participation points`;
   document.querySelector(".checkin-live-label").classList.remove("expired");
   document.getElementById("checkInLiveStatus").textContent = "CHECK-IN OPEN";
   checkInExpiresAt = expiresAt;
@@ -1451,7 +1661,7 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
     batch.set(checkInRef, {
       code,
       sessionTitle: activeSessionTitle,
-      points: 2,
+      points: activeCheckInPoints,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1506,19 +1716,9 @@ document.getElementById("endCheckIn").addEventListener("click", async () => {
   showToast(`Check-in closed. ${liveAttendanceCount} student${liveAttendanceCount === 1 ? "" : "s"} checked in.`);
 });
 
-document.getElementById("copyAcademyLink").addEventListener("click", async () => {
-  const academyUrl = "https://neurotech-academy-1c5d3.web.app/";
-  try {
-    await navigator.clipboard.writeText(academyUrl);
-    showToast("Learner website copied.");
-  } catch {
-    showToast(academyUrl);
-  }
-});
-
 document.getElementById("exportAttendance").addEventListener("click", () => {
   if (!adminAttendanceRecords.length) {
-    showToast(`There are no Session ${activeSessionNumber} attendance records to export yet.`);
+    showToast(`There are no ${checkInTargetLabel().toLowerCase()} attendance records to export yet.`);
     return;
   }
   const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -1537,7 +1737,7 @@ document.getElementById("exportAttendance").addEventListener("click", () => {
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = `neurotech-session-${activeSessionNumber}-attendance.csv`;
+  link.download = `neurotech-${activeSessionId}-attendance.csv`;
   link.click();
   URL.revokeObjectURL(url);
   showToast("Attendance CSV downloaded.");
@@ -1581,6 +1781,7 @@ const academyDateParts = new Intl.DateTimeFormat("en-US", { timeZone: ACADEMY_TI
 const academyDate = Object.fromEntries(academyDateParts.map((part) => [part.type, part.value]));
 document.getElementById("activityDateInput").value = `${academyDate.year}-${academyDate.month}-${academyDate.day}`;
 document.getElementById("newSessionDate").value = `${academyDate.year}-${academyDate.month}-${academyDate.day}`;
+document.getElementById("newEventDate").value = `${academyDate.year}-${academyDate.month}-${academyDate.day}`;
 if (["student", "admin"].includes(localPreviewRole)) localStorage.setItem("neurotech-auth-demo", localPreviewRole);
 const initialRoute = location.hash.slice(1);
 const validRoutes = ["home", "learn", "session", "library", "me", "admin"];

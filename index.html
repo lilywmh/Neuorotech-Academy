@@ -401,7 +401,6 @@
       <section class="page" id="admin-page" aria-labelledby="admin-title">
         <div class="admin-header">
           <div><p class="kicker">ADMIN OPERATIONS</p><h1 id="admin-title">Academy dashboard</h1><p>Run sessions, support learners, and manage participation records.</p></div>
-          <button class="button primary" id="adminOpenCheckIn">Open check-in</button>
         </div>
         <nav class="admin-view-tabs" aria-label="Admin sections">
           <button class="active" data-admin-view="overview"><span>01</span>Overview</button>
@@ -472,19 +471,26 @@
           </div>
         </section>
         <div class="admin-main" data-admin-panel="overview">
-          <article class="roster-card">
-            <div class="section-heading"><div><span class="section-number">01</span><h2>Live attendance</h2></div><span class="live-pill">● LIVE</span></div>
-            <div class="attendance-count"><strong id="attendanceNumber">0</strong><span>students checked in</span></div>
-            <div class="roster-list" id="rosterList"><p class="empty-state">Check-in has not opened yet.</p></div>
+          <article class="checkin-control-card">
+            <div class="section-heading"><div><span class="section-number">01</span><h2>Start a check-in</h2></div><span class="control-pill">ADMIN</span></div>
+            <p class="checkin-control-intro">Choose a curriculum session or create a one-time event. Each check-in gets a new QR code and six-digit code.</p>
+            <label class="checkin-target-field">Check-in for<select id="checkInTargetSelect" aria-label="Choose a session or event for check-in"></select></label>
+            <div class="selected-checkin-target">
+              <span id="selectedCheckInType">SESSION</span>
+              <strong id="selectedCheckInTitle">Where Signals Come From</strong>
+              <small id="selectedCheckInMeta">Oct 01 · 7:00 PM · 2 points</small>
+            </div>
+            <div class="checkin-control-actions">
+              <button class="button primary" id="adminOpenCheckIn" type="button">Open check-in</button>
+              <button class="button text-button" id="newCheckInEvent" type="button">+ New event</button>
+            </div>
+            <button class="attendance-export-link" id="exportAttendance" type="button">Export selected attendance ↓</button>
           </article>
-          <article class="admin-actions">
-            <p class="panel-label">QUICK ACTIONS</p>
-            <button id="createSessionAction"><span>＋</span><div><strong>Create a new session</strong><small>Add the meeting, materials, time, and initial visibility</small></div><b>SESSIONS</b></button>
-            <button id="addLearnerAction"><span>＋</span><div><strong>Add a learner</strong><small>Enroll by name and Google account email</small></div><b>ROSTER</b></button>
-            <button id="importPointsAction"><span>⇅</span><div><strong>Import participation points</strong><small>Match a Google Sheets CSV to learner emails</small></div><b>POINTS</b></button>
-            <button id="copyAcademyLink"><span>↗</span><div><strong>Copy learner website</strong><small>Share the Academy login link in Slack or on a slide</small></div></button>
-            <button id="exportAttendance"><span>↓</span><div><strong>Export this attendance</strong><small>Download the current upcoming session as CSV</small></div></button>
-            <p class="admin-workflow-note">Use the four tabs above for full management. Quick actions are shortcuts, not duplicate tools.</p>
+          <article class="roster-card">
+            <div class="section-heading"><div><span class="section-number">02</span><h2>Live attendance</h2></div><span class="live-pill">● LIVE</span></div>
+            <div class="attendance-count"><strong id="attendanceNumber">0</strong><span>students checked in</span></div>
+            <p class="attendance-target-name" id="attendanceTargetName">Session 02 · Where Signals Come From</p>
+            <div class="roster-list" id="rosterList"><p class="empty-state">Check-in has not opened yet.</p></div>
           </article>
         </div>
       </section>
@@ -514,7 +520,7 @@
         <div class="success-mark">✓</div>
         <p class="kicker">YOU’RE CHECKED IN</p>
         <h2 id="checkInSuccessTitle">Session 02</h2>
-        <p><span id="checkInSuccessSession">Where Signals Come From</span> · +2 participation points</p>
+        <p><span id="checkInSuccessSession">Where Signals Come From</span> · <span id="checkInSuccessPoints">+2 participation points</span></p>
         <button class="button dark wide" id="finishCheckIn">Back to Academy</button>
       </div>
     </dialog>
@@ -571,6 +577,33 @@
       <button class="dialog-close" data-close-admin-form="addSessionDialog" aria-label="Close">×</button>
       <p class="panel-label">CURRICULUM</p><h2>Add a session</h2><p>Create it as a draft, then publish when the details are ready.</p>
       <form id="addSessionForm"><label>Session title<input id="newSessionTitle" required /></label><div class="form-split"><label>Date<input id="newSessionDate" type="date" required /></label><label>Start time<input id="newSessionTime" type="time" value="19:00" required /></label></div><label>Description<textarea id="newSessionDescription" rows="3" required></textarea></label><label>Slides or Drive link <input id="newSessionLink" type="url" placeholder="https://drive.google.com/…" /></label><button class="button primary wide" type="submit">Create draft session</button><p class="workspace-status" id="addSessionStatus" role="status"></p></form>
+    </dialog>
+
+    <dialog class="admin-form-dialog session-form-dialog" id="editSessionDialog">
+      <button class="dialog-close" data-close-admin-form="editSessionDialog" aria-label="Close">×</button>
+      <p class="panel-label">SESSION EDITOR</p><h2>Edit session</h2><p>Saved changes update the learner schedule and session card in real time.</p>
+      <form id="editSessionForm">
+        <input id="editSessionId" type="hidden" />
+        <label>Session title<input id="editSessionTitle" required /></label>
+        <div class="form-split"><label>Date<input id="editSessionDate" type="date" required /></label><label>Start time<input id="editSessionTime" type="time" required /></label></div>
+        <label>Description<textarea id="editSessionDescription" rows="3" required></textarea></label>
+        <label>Primary slides or materials link<input id="editSessionLink" type="url" placeholder="https://drive.google.com/…" /></label>
+        <label>Additional resource links<textarea id="editSessionResources" rows="3" placeholder="One link per line"></textarea></label>
+        <button class="button primary wide" type="submit">Save changes</button>
+        <p class="workspace-status" id="editSessionStatus" role="status"></p>
+      </form>
+    </dialog>
+
+    <dialog class="admin-form-dialog" id="newCheckInEventDialog">
+      <button class="dialog-close" data-close-admin-form="newCheckInEventDialog" aria-label="Close">×</button>
+      <p class="panel-label">ONE-TIME CHECK-IN</p><h2>New event</h2><p>Use this for speaker events, general meetings, workshops, or other participation activities.</p>
+      <form id="newCheckInEventForm">
+        <label>Event name<input id="newEventTitle" required placeholder="e.g. Neural Interfaces Speaker Night" /></label>
+        <div class="form-split"><label>Date<input id="newEventDate" type="date" required /></label><label>Start time<input id="newEventTime" type="time" value="19:00" required /></label></div>
+        <label>Participation points<input id="newEventPoints" type="number" min="0" max="20" step="1" value="2" required /></label>
+        <button class="button primary wide" type="submit">Create and select event</button>
+        <p class="workspace-status" id="newCheckInEventStatus" role="status"></p>
+      </form>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
