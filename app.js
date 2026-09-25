@@ -1,10 +1,10 @@
 const sessions = [
-  { n: "01", title: "Welcome to the Academy", desc: "Meet the Academy, see how the program works, and get an introduction to neurotechnology.", status: "Today", date: "Sep 24" },
+  { n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", status: "Today", date: "Sep 24" },
   { n: "02", title: "Where Signals Come From", desc: "A first look at brain signals, EEG, and where useful data begins.", status: "Upcoming", date: "Oct 01" },
 ];
 
 const resources = [
-  { type: "current", label: "SLIDES · SESSION 01", title: "Session 01 Slides", desc: "The first Academy meeting: welcome, program overview, and an introduction to neurotechnology.", action: "Open slides ↗", featured: true, url: "https://docs.google.com/presentation/d/1gj3dmym0TYjCVJcDoW1_9KqIDwUPkEF42ZxRKyblkP0/edit?usp=sharing" },
+  { type: "current", label: "SLIDES · SESSION 01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, participation points, Academy roadmap, resources, and BCI 101: From Signal to Evidence.", action: "Open slides ↗", featured: true, url: "https://docs.google.com/presentation/d/1gj3dmym0TYjCVJcDoW1_9KqIDwUPkEF42ZxRKyblkP0/edit?usp=sharing" },
   { type: "current", label: "ONE-PAGER", title: "BCI Pipeline Map", desc: "A compact map from acquisition to feedback, with the questions to ask at every stage.", action: "Open guide ↗" },
   { type: "past", label: "SPRING 2026 · SLIDES", title: "Introduction to Neurotechnology", desc: "A broad tour of interfaces, imaging methods, and real-world applications.", action: "View archive ↗" },
   { type: "past", label: "SPRING 2026 · CODE", title: "EEG Starter Notebook", desc: "Last term’s introductory signal visualization exercise.", action: "Open notebook ↗" },
@@ -389,7 +389,7 @@ submitCode.addEventListener("click", async () => {
       email: currentFirebaseUser.email || "",
       name: currentFirebaseUser.displayName || currentFirebaseUser.email?.split("@")[0] || "Academy member",
       sessionId: SESSION_ID,
-      sessionTitle: "Welcome to the Academy",
+      sessionTitle: "Fall 2026 Intro Meeting",
       points: 2,
       checkInCode: code,
       checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -439,7 +439,7 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
   }
   try {
     await firebaseDb.collection("sessions").doc(SESSION_ID).set({
-      title: "Welcome to the Academy",
+      title: "Fall 2026 Intro Meeting",
       code: CHECK_IN_CODE,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
@@ -512,6 +512,8 @@ function showToast(message) {
 
 renderSessions();
 renderResources();
+const localPreviewRole = location.protocol === "file:" ? new URLSearchParams(location.search).get("preview") : null;
+if (["student", "admin"].includes(localPreviewRole)) localStorage.setItem("neurotech-auth-demo", localPreviewRole);
 const initialRoute = location.hash.slice(1);
 const validRoutes = ["home", "learn", "session", "library", "me", "admin"];
 const savedRole = localStorage.getItem("neurotech-auth-demo");
