@@ -1010,3 +1010,50 @@ body::before { opacity: .28; background-size: 56px 56px; }
   .session-resource-links a { text-align: center; }
   .role-view-switch button[data-role-view="admin"] { min-width: 104px; }
 }
+
+/* Contact directory: one title hierarchy across all three cards. */
+.contact-heading { display: block; }
+.contact-heading > div { max-width: 860px; }
+.contact-grid > article { display: flex; flex-direction: column; }
+.contact-grid > article > .contact-symbol { flex: 0 0 auto; margin: 0 0 17px; }
+.contact-grid > article > small {
+  display: block;
+  color: #6f8793;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+.contact-grid > article > h3 {
+  margin: 8px 0 18px;
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -.025em;
+}
+.team-directory .team-symbol { color: white; background: linear-gradient(145deg, #3d96cf, #276da4); font-family: var(--sans); font-size: 11px; font-weight: 900; letter-spacing: .04em; }
+.team-directory .contact-person:first-of-type { margin-top: 0; }
+.social-actions { margin-top: auto; }
+.social-brand.slack { background: white; }
+.social-brand.slack svg { width: 24px; height: 24px; }
+.slack-cyan { fill: #36c5f0; }
+.slack-green { fill: #2eb67d; }
+.slack-yellow { fill: #ecb22e; }
+.slack-red { fill: #e01e5a; }
+.reach-card.email { position: relative; overflow: hidden; border-color: rgba(217,83,79,.2); background: linear-gradient(155deg, rgba(255,252,249,.98), rgba(255,241,237,.94)); }
+.reach-card.email::after { content: "@"; position: absolute; right: -18px; top: -46px; color: rgba(242,95,92,.055); font-family: var(--serif); font-size: 190px; font-weight: 700; line-height: 1; pointer-events: none; }
+.reach-card.email > * { position: relative; z-index: 1; }
+.reach-card.email .email-symbol { width: 70px; height: 70px; border-radius: 21px; color: white; background: linear-gradient(145deg, var(--orange), #d94745); box-shadow: 0 12px 28px rgba(217,83,79,.2); }
+.email-symbol svg { width: 35px; height: 35px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.reach-card.email > p { margin-bottom: 28px; }
+.reach-card.email .contact-action { min-height: 68px; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; margin-top: auto; padding: 0 18px; border: 0; border-radius: 14px; color: white; background: var(--orange); box-shadow: 0 8px 0 #b83e3b; transition: transform .18s ease, box-shadow .18s ease; }
+.reach-card.email .contact-action span { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.reach-card.email .contact-action b { font-size: 9px; letter-spacing: .08em; }
+.reach-card.email .contact-action:hover { color: white; background: #e6514e; transform: translateY(-2px); box-shadow: 0 10px 0 #b83e3b; }
+
+@media (max-width: 700px) {
+  .contact-grid > article > h3 { font-size: 29px; }
+  .reach-card.email .email-symbol { width: 62px; height: 62px; border-radius: 18px; }
+  .reach-card.email .contact-action { min-height: 62px; padding-inline: 14px; }
+  .reach-card.email .contact-action span { font-size: 11px; }
+}
