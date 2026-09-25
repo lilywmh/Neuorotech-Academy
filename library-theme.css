@@ -736,3 +736,65 @@ body::before { opacity: .28; background-size: 56px 56px; }
 @media (prefers-reduced-motion: reduce) {
   .codex-badge-inner, .collection-track i { transition: none; }
 }
+
+/* Mobile sign-in is intentionally its own quiet, single-card experience. */
+@media (max-width: 700px) {
+  .auth-screen {
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: 1fr;
+    place-items: center;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    background:
+      radial-gradient(circle at 88% 10%, rgba(80,198,220,.2), transparent 38%),
+      radial-gradient(circle at 5% 94%, rgba(47,131,208,.12), transparent 36%),
+      #edf7fb;
+    overflow-y: auto;
+  }
+  .auth-visual { display: none; }
+  .auth-panel { width: 100%; display: block; padding: 0; }
+  .auth-card {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 34px 24px 26px;
+    border: 1px solid rgba(20,54,74,.1);
+    border-radius: 22px;
+    background: rgba(255,255,255,.94);
+    box-shadow: 0 20px 55px rgba(20,54,74,.12);
+    text-align: center;
+    backdrop-filter: blur(16px);
+    animation: none;
+    transform: none;
+  }
+  .auth-card::before {
+    content: "NEUROTECH@USC · ACADEMY";
+    display: block;
+    width: fit-content;
+    margin: 0 auto 28px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: #eaf7fb;
+    background: var(--ink);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .12em;
+  }
+  .auth-card .kicker { margin: 0; color: var(--orange); font-size: 10px; }
+  .auth-card h2 { max-width: 280px; margin: 10px auto 13px; font-size: 40px; line-height: 1; }
+  .auth-card > p:not(.kicker):not(.auth-note) { max-width: 290px; margin: 0 auto 27px; font-size: 14px; line-height: 1.55; }
+  .google-button {
+    min-height: 58px;
+    border-color: #cddde4;
+    border-radius: 12px;
+    font-size: 14px;
+    box-shadow: none;
+    touch-action: manipulation;
+  }
+  .google-button:hover { transform: none; box-shadow: none; }
+  .google-button:active { color: white; border-color: var(--acid); background: var(--acid); }
+  .auth-help { display: none; }
+  .auth-error { text-align: left; }
+  .auth-demo { margin-top: 18px; text-align: left; }
+  .auth-note { margin-top: 20px; font-size: 11px; line-height: 1.5; }
+}
