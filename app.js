@@ -216,6 +216,26 @@ function renderSessionStates() {
   sessions.forEach((session) => { session.state = getEffectiveSessionState(session); });
   renderSessions();
 
+  const visibleSessions = sessions.filter((session) => session.state !== "draft");
+  const stateCounts = visibleSessions.reduce((counts, session) => {
+    counts[session.state] = (counts[session.state] || 0) + 1;
+    return counts;
+  }, {});
+  const coursePlanSummary = document.getElementById("coursePlanSummary");
+  if (coursePlanSummary) {
+    if (!visibleSessions.length) {
+      coursePlanSummary.textContent = "No sessions are published yet. New sessions will appear here once the curriculum is confirmed.";
+    } else {
+      const parts = [
+        stateCounts.past ? `${stateCounts.past} past` : "",
+        stateCounts.upcoming ? `${stateCounts.upcoming} upcoming` : "",
+        stateCounts.published ? `${stateCounts.published} published` : ""
+      ].filter(Boolean);
+      const statusList = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0];
+      coursePlanSummary.textContent = `${visibleSessions.length} session${visibleSessions.length === 1 ? " is" : "s are"} available: ${statusList}. More sessions will appear as the curriculum is confirmed.`;
+    }
+  }
+
   const futureSession = sessions.find((session) => session.state === "upcoming")
     || sessions.filter((session) => session.state === "published" && new Date(session.endsAt).getTime() > Date.now()).sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt))[0];
   const latestPast = [...sessions].filter((session) => session.state === "past").sort((a, b) => new Date(b.startsAt) - new Date(a.startsAt))[0];
