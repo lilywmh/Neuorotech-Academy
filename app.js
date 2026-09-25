@@ -1,17 +1,10 @@
 const sessions = [
-  { n: "01", title: "The Challenge", desc: "See the whole BCI loop and define what success means.", act: "sense", status: "Next", date: "Sep 24" },
-  { n: "02", title: "Where Signals Come From", desc: "Connect motor imagery, EEG, and the artifacts around them.", act: "sense", status: "Locked", date: "Oct 01" },
-  { n: "03", title: "Meet the Dataset", desc: "Load trials, channels, time, and labels in one living notebook.", act: "sense", status: "Locked", date: "Oct 15" },
-  { n: "04", title: "Cleaning the Signal", desc: "Filter noise without erasing the thing you want to measure.", act: "decode", status: "Locked", date: "Oct 22" },
-  { n: "05", title: "Finding Useful Patterns", desc: "Turn mu and beta rhythms into features a model can use.", act: "decode", status: "Locked", date: "Oct 29" },
-  { n: "06", title: "Teaching the Computer", desc: "Train a classifier and learn when an accuracy score lies.", act: "decode", status: "Locked", date: "Nov 05" },
-  { n: "07", title: "From Model to System", desc: "Design for calibration, latency, reliability, privacy, and people.", act: "evaluate", status: "Locked", date: "Nov 12" },
-  { n: "08", title: "Showcase & Reflection", desc: "Explain what you built, what failed, and what should come next.", act: "evaluate", status: "Locked", date: "Nov 19" },
+  { n: "01", title: "Welcome to the Academy", desc: "Meet the Academy, see how the program works, and get an introduction to neurotechnology.", status: "Today", date: "Sep 24" },
+  { n: "02", title: "Where Signals Come From", desc: "A first look at brain signals, EEG, and where useful data begins.", status: "Upcoming", date: "Oct 01" },
 ];
 
 const resources = [
-  { type: "current", label: "SLIDES · SESSION 01", title: "The BCI Challenge", desc: "Today’s welcome slides, course roadmap, and full BCI pipeline.", action: "Open slides ↗", featured: true },
-  { type: "current", label: "SLIDES · SESSION 02", title: "Where Signals Come From", desc: "Motor cortex, motor imagery, EEG channels, and common artifacts.", action: "View slides ↗" },
+  { type: "current", label: "SLIDES · SESSION 01", title: "Session 01 Slides", desc: "The first Academy meeting: welcome, program overview, and an introduction to neurotechnology.", action: "Open slides ↗", featured: true, url: "https://docs.google.com/presentation/d/1gj3dmym0TYjCVJcDoW1_9KqIDwUPkEF42ZxRKyblkP0/edit?usp=sharing" },
   { type: "current", label: "ONE-PAGER", title: "BCI Pipeline Map", desc: "A compact map from acquisition to feedback, with the questions to ask at every stage.", action: "Open guide ↗" },
   { type: "past", label: "SPRING 2026 · SLIDES", title: "Introduction to Neurotechnology", desc: "A broad tour of interfaces, imaging methods, and real-world applications.", action: "View archive ↗" },
   { type: "past", label: "SPRING 2026 · CODE", title: "EEG Starter Notebook", desc: "Last term’s introductory signal visualization exercise.", action: "Open notebook ↗" },
@@ -59,6 +52,10 @@ profileButton.addEventListener("click", (event) => {
 });
 document.addEventListener("click", () => { profileMenu.classList.remove("open"); profileButton.setAttribute("aria-expanded", "false"); });
 document.getElementById("adminToggle").addEventListener("click", () => navigate("admin"));
+document.getElementById("contactTeamButton").addEventListener("click", () => {
+  navigate("home");
+  setTimeout(() => document.getElementById("contact").scrollIntoView({ behavior: "smooth", block: "start" }), 220);
+});
 
 const authScreen = document.getElementById("authScreen");
 const adminToggle = document.getElementById("adminToggle");
@@ -163,22 +160,16 @@ document.getElementById("signOutButton").addEventListener("click", async () => {
   if (!firebaseAuth) initializeFirebaseAuth("home");
 });
 
-function renderSessions(filter = "all") {
+function renderSessions() {
   const list = document.getElementById("sessionList");
   list.innerHTML = sessions.map((s) => `
-    <article class="session-row ${filter !== "all" && s.act !== filter ? "hidden" : ""}" data-act="${s.act}">
+    <article class="session-row">
       <span class="num">${s.n}</span>
-      <div><small class="session-step">STEP ${Number(s.n)} · ${s.act.toUpperCase()}</small><h3>${s.title}</h3><p>${s.desc}</p></div>
-      <span class="status ${s.status === "Complete" ? "done" : s.status === "Next" ? "now" : ""}">${s.status} · ${s.date}</span>
-      <button class="session-action ${s.status === "Locked" ? "locked" : ""}" data-session-action="${s.n}">${s.status === "Complete" ? "Review" : s.status === "Next" ? "Open" : "Locked"}${s.status === "Locked" ? "" : " →"}</button>
+      <div><small class="session-step">SESSION ${s.n}</small><h3>${s.title}</h3><p>${s.desc}</p></div>
+      <span class="status ${s.n === "01" ? "now" : ""}">${s.status} · ${s.date}</span>
+      <button class="session-action ${s.n === "02" ? "locked" : ""}" data-session-action="${s.n}">${s.n === "01" ? "Open →" : "Details soon"}</button>
     </article>`).join("");
 }
-
-document.querySelectorAll(".act-filter").forEach((button) => button.addEventListener("click", () => {
-  document.querySelectorAll(".act-filter").forEach((b) => b.classList.remove("active"));
-  button.classList.add("active");
-  renderSessions(button.dataset.act);
-}));
 document.querySelectorAll("[data-learn-view]").forEach((button) => button.addEventListener("click", () => {
   document.querySelectorAll("[data-learn-view]").forEach((item) => item.classList.toggle("active", item === button));
   document.getElementById("outlineView").classList.toggle("active", button.dataset.learnView === "outline");
@@ -192,12 +183,8 @@ document.getElementById("sessionList").addEventListener("click", (event) => {
   const action = event.target.closest("[data-session-action]");
   if (!action) return;
   const session = sessions.find((item) => item.n === action.dataset.sessionAction);
-  if (session.status === "Locked") {
-    showToast("Finish the previous step to unlock this session.");
-    return;
-  }
   if (session.n === "01") { navigate("session"); return; }
-  showToast(`${session.title}: connect the session’s Google Drive link here.`);
+  showToast("Session 02 details will be posted once the curriculum is confirmed.");
 });
 
 function renderResources() {
@@ -208,7 +195,7 @@ function renderResources() {
     const matchesSearch = `${r.label} ${r.title} ${r.desc}`.toLowerCase().includes(term);
     return `<article class="resource-card ${r.featured ? "featured" : ""} ${matchesFilter && matchesSearch ? "" : "hidden"}">
       <div class="resource-type"><span>${r.label}</span><span>↗</span></div>
-      <h3>${r.title}</h3><p>${r.desc}</p><a href="#">${r.action}</a>
+      <h3>${r.title}</h3><p>${r.desc}</p><a href="${r.url || "#"}" ${r.url ? 'target="_blank" rel="noreferrer"' : ""}>${r.action}</a>
     </article>`;
   }).join("");
 }
@@ -229,7 +216,7 @@ function renderLearnerProgress(checkedIn) {
   document.getElementById("meAttendanceText").textContent = checkedIn ? "1 of 1 sessions" : "0 of 1 sessions";
   document.getElementById("meAttendanceBar").style.width = checkedIn ? "100%" : "0%";
   document.getElementById("mePoints").textContent = String(points).padStart(2, "0");
-  document.querySelector(".ring-value").style.strokeDashoffset = checkedIn ? "308" : "352";
+  document.querySelector(".ring-value").style.strokeDashoffset = checkedIn ? "176" : "352";
   document.getElementById("pointsHistory").innerHTML = checkedIn
     ? '<li><span>Session 01 attendance</span><strong>+2</strong></li>'
     : '<li><span>Check in to Session 01 today</span><strong>+2</strong></li>';
@@ -402,7 +389,7 @@ submitCode.addEventListener("click", async () => {
       email: currentFirebaseUser.email || "",
       name: currentFirebaseUser.displayName || currentFirebaseUser.email?.split("@")[0] || "Academy member",
       sessionId: SESSION_ID,
-      sessionTitle: "The Challenge",
+      sessionTitle: "Welcome to the Academy",
       points: 2,
       checkInCode: code,
       checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -452,7 +439,7 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
   }
   try {
     await firebaseDb.collection("sessions").doc(SESSION_ID).set({
-      title: "The Challenge",
+      title: "Welcome to the Academy",
       code: CHECK_IN_CODE,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
@@ -494,13 +481,19 @@ document.getElementById("endCheckIn").addEventListener("click", async () => {
   showToast(`Check-in closed. ${liveAttendanceCount} student${liveAttendanceCount === 1 ? "" : "s"} checked in.`);
 });
 
-document.querySelectorAll(".admin-actions button, .prep-strip a").forEach((button) => button.addEventListener("click", (event) => { event.preventDefault(); showToast("Link placeholder — connect your Google Drive URL here."); }));
+document.querySelectorAll(".admin-actions button, .prep-strip a").forEach((button) => button.addEventListener("click", (event) => {
+  if (button.matches("a") && button.getAttribute("href") !== "#") return;
+  event.preventDefault();
+  showToast("Link placeholder — connect your Google Drive URL here.");
+}));
 document.getElementById("resourceGrid").addEventListener("click", (event) => {
-  if (!event.target.closest("a")) return;
+  const link = event.target.closest("a");
+  if (!link || link.getAttribute("href") !== "#") return;
   event.preventDefault();
   showToast("Link placeholder — connect your Google Drive URL here.");
 });
 document.querySelectorAll(".session-placeholder-link, .material-link").forEach((button) => button.addEventListener("click", (event) => {
+  if (button.matches("a") && button.getAttribute("href") !== "#") return;
   event.preventDefault();
   showToast("Link placeholder — connect your Google Drive or Form URL here.");
 }));

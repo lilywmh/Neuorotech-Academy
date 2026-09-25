@@ -30,7 +30,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.sessionId == "session01"
-        && request.resource.data.sessionTitle == "The Challenge"
+        && request.resource.data.sessionTitle == "Welcome to the Academy"
         && request.resource.data.points == 2
         && request.resource.data.checkInCode == get(/databases/$(database)/documents/sessions/session01).data.code
         && get(/databases/$(database)/documents/sessions/session01).data.checkInOpen == true

@@ -19,7 +19,7 @@
         </div>
         <div class="auth-visual-copy">
           <p>FALL 2026</p>
-          <h1>One signal.<br />Eight sessions.</h1>
+          <h1>One signal.<br />A course in motion.</h1>
           <div class="auth-wave" aria-hidden="true">
             <svg viewBox="0 0 700 130" preserveAspectRatio="none"><path d="M0 68 C28 59,43 75,68 65 S106 39,127 69 S163 97,189 64 S230 28,250 70 S290 103,316 64 S354 42,378 68 S420 86,446 64 S486 35,507 70 S550 94,573 64 S621 43,700 66" /></svg>
           </div>
@@ -73,6 +73,7 @@
 
       <div class="profile-menu" id="profileMenu" role="menu">
         <button data-route="me" role="menuitem">View my progress</button>
+        <button id="contactTeamButton" role="menuitem">Contact the team</button>
         <button id="adminToggle" role="menuitem">Open admin dashboard</button>
         <button id="signOutButton" role="menuitem">Sign out</button>
       </div>
@@ -84,7 +85,7 @@
           <div class="hero-copy reveal">
             <div class="eyebrow"><span class="live-dot"></span> Session 01 · today</div>
             <h1 id="home-title">Neurotech<br /><em>Academy.</em></h1>
-            <p class="hero-subtitle">Fall 2026 · Eight sessions. We’ll work through one EEG project together, from the raw signal to a simple BCI.</p>
+            <p class="hero-subtitle">Fall 2026 · We’ll build the Academy together, one session at a time.</p>
             <div class="hero-actions">
               <button class="button primary" id="openCheckIn">Check in to session</button>
               <button class="button text-button" data-route="session">View this week’s lesson <span>→</span></button>
@@ -115,16 +116,16 @@
             <div class="lesson-summary">
               <div class="lesson-index">01</div>
               <div>
-                <p class="kicker">ACT I · SENSE</p>
-                <h3>The Challenge</h3>
-                <p>See the full BCI pipeline, meet your pod, and define what we are building this term.</p>
+                <p class="kicker">SESSION 01 · WELCOME</p>
+                <h3>Welcome to the Academy</h3>
+                <p>Meet your group, understand how the Academy works, and start with a shared introduction to neurotechnology.</p>
                 <div class="lesson-meta"><span>◷ 50 min</span><span>⌁ Bring a laptop</span><span>◎ In person</span></div>
               </div>
             </div>
             <div class="prep-strip">
               <span class="check-icon">✓</span>
               <div><strong>Before you arrive</strong><small>Bring a laptop and sign in to your Google account.</small></div>
-              <a href="#" aria-label="Open welcome slides">Open slides ↗</a>
+              <a href="https://docs.google.com/presentation/d/1gj3dmym0TYjCVJcDoW1_9KqIDwUPkEF42ZxRKyblkP0/edit?usp=sharing" target="_blank" rel="noreferrer" aria-label="Open welcome slides">Open slides ↗</a>
             </div>
           </article>
 
@@ -138,7 +139,7 @@
                 <circle class="ring-track" cx="70" cy="70" r="56" />
                 <circle class="ring-value" cx="70" cy="70" r="56" />
               </svg>
-              <div class="ring-label"><strong><b id="homeSessionCount">0</b><span>/8</span></strong><small>sessions</small></div>
+              <div class="ring-label"><strong><b id="homeSessionCount">0</b><span>/2</span></strong><small>published sessions</small></div>
             </div>
             <div class="progress-stats">
               <div><strong id="homePoints">00</strong><small>participation<br />points</small></div>
@@ -150,19 +151,38 @@
 
         <section class="journey reveal delay-3">
           <div class="section-heading journey-heading">
-            <div><span class="section-number">03</span><h2>8-step course map</h2></div>
-            <p>Follow the steps in order. Each one builds on the last.</p>
+            <div><span class="section-number">03</span><h2>Current course plan</h2></div>
+            <p>These are the sessions currently confirmed. More will appear as the curriculum develops.</p>
           </div>
-          <div class="journey-track">
+          <div class="journey-track two-sessions">
             <span class="track-progress"></span>
-            <button class="journey-stop current" data-session="1"><i>1</i><span>01</span><strong>The challenge</strong><small>SENSE</small></button>
-            <button class="journey-stop" data-session="2"><i>2</i><span>02</span><strong>Signal origins</strong><small>SENSE</small></button>
-            <button class="journey-stop" data-session="3"><i>3</i><span>03</span><strong>Meet the data</strong><small>SENSE</small></button>
-            <button class="journey-stop" data-session="4"><i>4</i><span>04</span><strong>Clean the signal</strong><small>DECODE</small></button>
-            <button class="journey-stop" data-session="5"><i>5</i><span>05</span><strong>Find patterns</strong><small>DECODE</small></button>
-            <button class="journey-stop" data-session="6"><i>6</i><span>06</span><strong>Train a model</strong><small>DECODE</small></button>
-            <button class="journey-stop" data-session="7"><i>7</i><span>07</span><strong>Build the system</strong><small>EVALUATE</small></button>
-            <button class="journey-stop" data-session="8"><i>8</i><span>08</span><strong>Showcase</strong><small>EVALUATE</small></button>
+            <button class="journey-stop current" data-session="1"><i>1</i><span>01</span><strong>Welcome to the Academy</strong><small>SEP 24</small></button>
+            <button class="journey-stop" data-session="2"><i>2</i><span>02</span><strong>Where Signals Come From</strong><small>OCT 01</small></button>
+          </div>
+        </section>
+
+        <section class="contact-section reveal" id="contact">
+          <div class="contact-heading">
+            <div><span class="section-number">04</span><p class="kicker">CONTACT US</p><h2>Questions should have a clear place to go.</h2></div>
+            <p>Use Slack for quick course questions. For something private, reach out to an organizer or email the Neurotech team.</p>
+          </div>
+          <div class="contact-grid">
+            <article class="team-directory">
+              <p class="panel-label">ACADEMY TEAM</p>
+              <div class="contact-person"><span>01</span><div><small>ACADEMY LEAD</small><strong>Contact details coming soon</strong></div></div>
+              <div class="contact-person"><span>02</span><div><small>CURRICULUM & WORKSHOPS</small><strong>Contact details coming soon</strong></div></div>
+              <p class="contact-note">Names, preferred contact method, and office hours can be added here.</p>
+            </article>
+            <article class="reach-card private">
+              <span class="contact-symbol">↗</span><small>ONE-TO-ONE</small><h3>Reach an organizer</h3>
+              <p>Use this for private questions, accommodations, or anything you would rather not post in Slack.</p>
+              <button class="contact-action" disabled>Contact portal coming soon</button>
+            </article>
+            <article class="reach-card email">
+              <span class="contact-symbol">@</span><small>NEUROTECH EMAIL</small><h3>Send us an email</h3>
+              <p>For general Academy questions, partnerships, or speaker inquiries.</p>
+              <button class="contact-action" disabled>Email address coming soon</button>
+            </article>
           </div>
         </section>
       </section>
@@ -171,7 +191,7 @@
         <div class="page-intro">
           <p class="kicker">WHAT YOU WILL LEARN</p>
           <h1 id="learn-title">From signal<br />to decision.</h1>
-          <p>Go in order. In each session, learn one idea, use it in the notebook, and finish one core checkpoint. Extensions are optional.</p>
+          <p>The first two sessions are published below. We’ll add later sessions once the curriculum is confirmed.</p>
         </div>
         <div class="view-switch" aria-label="Choose syllabus view">
           <button class="active" data-learn-view="outline">Course outline</button>
@@ -179,12 +199,6 @@
         </div>
         <div class="learn-view active" id="outlineView">
           <div class="curriculum-layout">
-          <aside class="act-rail">
-            <button class="act-filter active" data-act="all">All sessions <span>8</span></button>
-            <button class="act-filter" data-act="sense">Act I — Sense <span>3</span></button>
-            <button class="act-filter" data-act="decode">Act II — Decode <span>3</span></button>
-            <button class="act-filter" data-act="evaluate">Act III — Evaluate <span>2</span></button>
-          </aside>
           <div class="session-list" id="sessionList"></div>
           </div>
         </div>
@@ -200,13 +214,13 @@
                 <span class="calendar-day"><b>7</b></span><span class="calendar-day"><b>8</b></span><span class="calendar-day"><b>9</b></span><span class="calendar-day"><b>10</b></span><span class="calendar-day"><b>11</b></span><span class="calendar-day weekend"><b>12</b></span><span class="calendar-day weekend"><b>13</b></span>
                 <span class="calendar-day"><b>14</b></span><span class="calendar-day"><b>15</b></span><span class="calendar-day"><b>16</b></span><span class="calendar-day"><b>17</b></span><span class="calendar-day"><b>18</b></span><span class="calendar-day weekend"><b>19</b></span><span class="calendar-day weekend"><b>20</b></span>
                 <span class="calendar-day"><b>21</b></span><span class="calendar-day"><b>22</b></span><span class="calendar-day"><b>23</b></span>
-                <button class="calendar-day event current"><b>24</b><small>S01 · TODAY</small><strong>The Challenge</strong></button>
+                <button class="calendar-day event current"><b>24</b><small>S01 · TODAY</small><strong>Welcome</strong></button>
                 <span class="calendar-day"><b>25</b></span><span class="calendar-day weekend"><b>26</b></span><span class="calendar-day weekend"><b>27</b></span>
                 <span class="calendar-day"><b>28</b></span><span class="calendar-day"><b>29</b></span><span class="calendar-day"><b>30</b></span>
               </div>
             </section>
             <section class="calendar-month">
-              <div class="calendar-title"><h2>October 2026</h2><span>4 sessions</span></div>
+              <div class="calendar-title"><h2>October 2026</h2><span>1 published session</span></div>
               <div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
               <div class="calendar-grid calendar-days">
                 <span class="empty"></span><span class="empty"></span><span class="empty"></span>
@@ -216,37 +230,18 @@
                 <span class="calendar-day"><b>8</b></span>
                 <span class="calendar-day"><b>9</b></span><span class="calendar-day weekend"><b>10</b></span><span class="calendar-day weekend"><b>11</b></span>
                 <span class="calendar-day"><b>12</b></span><span class="calendar-day"><b>13</b></span><span class="calendar-day"><b>14</b></span>
-                <button class="calendar-day event"><b>15</b><small>S03</small><strong>Meet the data</strong></button>
+                <span class="calendar-day"><b>15</b></span>
                 <span class="calendar-day"><b>16</b></span><span class="calendar-day weekend"><b>17</b></span><span class="calendar-day weekend"><b>18</b></span>
                 <span class="calendar-day"><b>19</b></span><span class="calendar-day"><b>20</b></span><span class="calendar-day"><b>21</b></span>
-                <button class="calendar-day event"><b>22</b><small>S04</small><strong>Clean signal</strong></button>
+                <span class="calendar-day"><b>22</b></span>
                 <span class="calendar-day"><b>23</b></span><span class="calendar-day weekend"><b>24</b></span><span class="calendar-day weekend"><b>25</b></span>
                 <span class="calendar-day"><b>26</b></span><span class="calendar-day"><b>27</b></span><span class="calendar-day"><b>28</b></span>
-                <button class="calendar-day event"><b>29</b><small>S05</small><strong>Find patterns</strong></button>
+                <span class="calendar-day"><b>29</b></span>
                 <span class="calendar-day"><b>30</b></span><span class="calendar-day weekend"><b>31</b></span>
               </div>
             </section>
-            <section class="calendar-month">
-              <div class="calendar-title"><h2>November 2026</h2><span>3 sessions</span></div>
-              <div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
-              <div class="calendar-grid calendar-days">
-                <span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span>
-                <span class="calendar-day weekend"><b>1</b></span>
-                <span class="calendar-day"><b>2</b></span><span class="calendar-day"><b>3</b></span><span class="calendar-day"><b>4</b></span>
-                <button class="calendar-day event"><b>5</b><small>S06</small><strong>Train model</strong></button>
-                <span class="calendar-day"><b>6</b></span><span class="calendar-day weekend"><b>7</b></span><span class="calendar-day weekend"><b>8</b></span>
-                <span class="calendar-day"><b>9</b></span><span class="calendar-day"><b>10</b></span><span class="calendar-day"><b>11</b></span>
-                <button class="calendar-day event"><b>12</b><small>S07</small><strong>Build system</strong></button>
-                <span class="calendar-day"><b>13</b></span><span class="calendar-day weekend"><b>14</b></span><span class="calendar-day weekend"><b>15</b></span>
-                <span class="calendar-day"><b>16</b></span><span class="calendar-day"><b>17</b></span><span class="calendar-day"><b>18</b></span>
-                <button class="calendar-day event"><b>19</b><small>S08</small><strong>Showcase</strong></button>
-                <span class="calendar-day"><b>20</b></span><span class="calendar-day weekend"><b>21</b></span><span class="calendar-day weekend"><b>22</b></span>
-                <span class="calendar-day"><b>23</b></span><span class="calendar-day"><b>24</b></span><span class="calendar-day"><b>25</b></span><span class="calendar-day"><b>26</b></span><span class="calendar-day"><b>27</b></span><span class="calendar-day weekend"><b>28</b></span><span class="calendar-day weekend"><b>29</b></span>
-                <span class="calendar-day"><b>30</b></span>
-              </div>
-            </section>
           </div>
-          <p class="calendar-note"><strong>All Academy meetings:</strong> Thursdays at 6:00 PM.</p>
+          <p class="calendar-note"><strong>Currently published:</strong> September 24 and October 1. Later dates will appear after the curriculum is confirmed.</p>
         </div>
       </section>
 
@@ -255,9 +250,9 @@
 
         <header class="session-detail-hero">
           <div class="session-detail-copy">
-            <p class="kicker">SESSION 01 · ACT I: SENSE</p>
-            <h1 id="session-title">The Challenge</h1>
-            <p class="session-lead">See how a brain signal becomes a command—and what we’ll build together this term.</p>
+            <p class="kicker">SESSION 01 · WELCOME</p>
+            <h1 id="session-title">Welcome to the Academy</h1>
+            <p class="session-lead">Meet the people in the room, see how the Academy works, and build a shared starting point for neurotechnology.</p>
             <div class="session-facts">
               <span><small>DATE</small><strong>September 24</strong></span>
               <span><small>TIME</small><strong>6:00–6:50 PM</strong></span>
@@ -266,7 +261,7 @@
             </div>
           </div>
           <aside class="session-number-card" aria-hidden="true">
-            <span>SESSION</span><strong>01</strong><small>OF 08</small>
+            <span>SESSION</span><strong>01</strong><small>OF 02 PUBLISHED</small>
           </aside>
         </header>
 
@@ -274,35 +269,35 @@
           <article class="session-content">
             <section class="question-block">
               <span class="content-label">TODAY’S QUESTION</span>
-              <h2>How can a brain signal become a useful command?</h2>
+              <h2>What will we learn together, and how will the Academy work?</h2>
             </section>
 
             <section class="content-section outcomes-section">
               <div class="content-section-heading"><span>01</span><div><h2>What you’ll learn</h2><p>By the end of this session, you can:</p></div></div>
               <ul class="outcome-list">
-                <li><i>1</i><span>Explain what Neurotech Academy will cover this term.</span></li>
-                <li><i>2</i><span>Identify the main stages of a brain–computer interface.</span></li>
-                <li><i>3</i><span>Describe one neurotechnology question you want to explore.</span></li>
+                <li><i>1</i><span>Know the people in your pod and who to contact for help.</span></li>
+                <li><i>2</i><span>Understand the Academy format, participation points, and project pathway.</span></li>
+                <li><i>3</i><span>Describe what neurotechnology can do and one question you want to explore.</span></li>
               </ul>
             </section>
 
             <section class="content-section">
               <div class="content-section-heading"><span>02</span><div><h2>Today’s plan</h2><p>50 minutes · group activities included</p></div></div>
               <div class="agenda-list">
-                <div class="agenda-item"><time>0–5</time><div><strong>Check in and settle down</strong><p>Enter the session code, then sit with a pod of five or six.</p></div><span>5 MIN</span></div>
-                <div class="agenda-item"><time>5–12</time><div><strong>Meet your pod</strong><p>Name, major, what brought you here, and one quick icebreaker.</p></div><span>7 MIN</span></div>
-                <div class="agenda-item"><time>12–20</time><div><strong>How the Academy works</strong><p>Roadmap, session format, checkpoints, participation, and project matching.</p></div><span>8 MIN</span></div>
-                <div class="agenda-item feature"><time>20–30</time><div><strong>The BCI challenge</strong><p>Follow the path from brain activity to EEG, data, model, and command.</p></div><span>10 MIN</span></div>
-                <div class="agenda-item"><time>30–42</time><div><strong>Build the pipeline</strong><p>Arrange the stages of a BCI and identify what could go wrong.</p></div><span>12 MIN</span></div>
-                <div class="agenda-item"><time>42–47</time><div><strong>Compare ideas</strong><p>Each pod shares one decision or question with the room.</p></div><span>5 MIN</span></div>
-                <div class="agenda-item"><time>47–50</time><div><strong>Exit ticket</strong><p>Submit what you learned, what interests you, and one open question.</p></div><span>3 MIN</span></div>
+                <div class="agenda-item"><time>0–5</time><div><strong>Arrive and check in</strong><p>Enter the session code and sit with a small group.</p></div><span>5 MIN</span></div>
+                <div class="agenda-item feature"><time>5–15</time><div><strong>Meet the room</strong><p>A low-pressure icebreaker: name, background, and what brought you to neurotech.</p></div><span>10 MIN</span></div>
+                <div class="agenda-item"><time>15–25</time><div><strong>Academy roadmap</strong><p>What meetings will look like, what we may cover, and how each session connects.</p></div><span>10 MIN</span></div>
+                <div class="agenda-item"><time>25–33</time><div><strong>Participation and projects</strong><p>How points track commitment and inform consideration for future project teams.</p></div><span>8 MIN</span></div>
+                <div class="agenda-item"><time>33–43</time><div><strong>What counts as neurotechnology?</strong><p>Look at a few examples and identify the problem, signal, and outcome in each one.</p></div><span>10 MIN</span></div>
+                <div class="agenda-item"><time>43–48</time><div><strong>Questions and what comes next</strong><p>Clarify expectations and preview Session 02.</p></div><span>5 MIN</span></div>
+                <div class="agenda-item"><time>48–50</time><div><strong>Quick exit ticket</strong><p>Share one takeaway and one question for the Academy team.</p></div><span>2 MIN</span></div>
               </div>
             </section>
 
             <section class="content-section">
               <div class="content-section-heading"><span>03</span><div><h2>Materials</h2><p>Everything used during this session</p></div></div>
               <div class="session-materials">
-                <a href="#" class="material-link"><i>▤</i><span><small>GOOGLE SLIDES</small><strong>Session 01 slides</strong></span><b>Open ↗</b></a>
+                <a href="https://docs.google.com/presentation/d/1gj3dmym0TYjCVJcDoW1_9KqIDwUPkEF42ZxRKyblkP0/edit?usp=sharing" target="_blank" rel="noreferrer" class="material-link"><i>▤</i><span><small>GOOGLE SLIDES</small><strong>Session 01 slides</strong></span><b>Open ↗</b></a>
                 <a href="#" class="material-link"><i>⌁</i><span><small>GROUP ACTIVITY</small><strong>BCI pipeline worksheet</strong></span><b>Open ↗</b></a>
                 <a href="#" class="material-link"><i>✓</i><span><small>GOOGLE FORM</small><strong>Session 01 exit ticket</strong></span><b>Submit ↗</b></a>
               </div>
@@ -446,7 +441,7 @@
         <div class="success-mark">✓</div>
         <p class="kicker">YOU’RE CHECKED IN</p>
         <h2>Session 01</h2>
-        <p>The Challenge · +2 participation points</p>
+        <p>Welcome to the Academy · +2 participation points</p>
         <button class="button dark wide" id="finishCheckIn">Back to Academy</button>
       </div>
     </dialog>
@@ -464,7 +459,7 @@
       <aside class="admin-checkin-side">
         <div class="checkin-side-top">
           <span>SESSION 01</span>
-          <strong>The Challenge</strong>
+          <strong>Welcome to the Academy</strong>
           <small>Thursday, September 24 · 6:00 PM</small>
         </div>
         <div class="checkin-live-count"><strong id="modalAttendanceNumber">0</strong><span>checked in</span></div>
