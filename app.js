@@ -1,6 +1,6 @@
 const sessions = [
-  { n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", status: "Today", date: "Sep 24" },
-  { n: "02", title: "Where Signals Come From", desc: "A first look at brain signals, EEG, and where useful data begins.", status: "Upcoming", date: "Oct 01" },
+  { id: "session01", n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", state: "past", date: "Sep 24", time: "6:00 PM" },
+  { id: "session02", n: "02", title: "Where Signals Come From", desc: "Build a practical map from neurons and electrodes to the signals we can actually measure.", state: "upcoming", date: "Oct 01", time: "7:00 PM" },
 ];
 
 const resources = [
@@ -23,13 +23,17 @@ let firebaseDb = null;
 let unsubscribeAttendance = null;
 let unsubscribeRoster = null;
 let unsubscribeSession = null;
+let unsubscribeAcademyConfig = null;
 let hasCheckedIn = false;
 let liveAttendanceCount = 0;
 let activeCheckInCode = "";
 let learnerRecords = [];
 let adminAttendanceRecords = [];
 const PREVIEW_CHECK_IN_CODE = "092426";
-const SESSION_ID = "session01";
+const SESSION_ID = "session02";
+const SESSION_TITLE = "Where Signals Come From";
+const DEFAULT_SESSION_STATES = { session01: "past", session02: "upcoming" };
+let sessionStates = { ...DEFAULT_SESSION_STATES };
 
 function navigate(route) {
   if (route === "admin" && currentUserRole !== "admin") {
@@ -98,9 +102,12 @@ function showSignedOut() {
   unsubscribeAttendance?.();
   unsubscribeRoster?.();
   unsubscribeSession?.();
+  unsubscribeAcademyConfig?.();
   unsubscribeAttendance = null;
   unsubscribeRoster = null;
   unsubscribeSession = null;
+  unsubscribeAcademyConfig = null;
+  unsubscribeAcademyConfig = null;
   currentFirebaseUser = null;
   hasCheckedIn = false;
   currentUserRole = null;
@@ -165,13 +172,71 @@ document.getElementById("signOutButton").addEventListener("click", async () => {
 
 function renderSessions() {
   const list = document.getElementById("sessionList");
-  list.innerHTML = sessions.map((s) => `
+  const visibleSessions = sessions.filter((session) => sessionStates[session.id] !== "draft");
+  list.innerHTML = visibleSessions.map((s) => {
+    const state = sessionStates[s.id] || s.state;
+    const stateLabel = state === "past" ? "Past" : state === "upcoming" ? "Upcoming" : "Published";
+    return `
     <article class="session-row">
       <span class="num">${s.n}</span>
       <div><small class="session-step">SESSION ${s.n}</small><h3>${s.title}</h3><p>${s.desc}</p></div>
-      <span class="status ${s.n === "01" ? "now" : ""}">${s.status} · ${s.date}</span>
+      <span class="status ${state === "past" ? "done" : state === "upcoming" ? "now" : ""}">${stateLabel} · ${s.date} · ${s.time}</span>
       <button class="session-action ${s.n === "02" ? "locked" : ""}" data-session-action="${s.n}">${s.n === "01" ? "Open →" : "Details soon"}</button>
-    </article>`).join("");
+    </article>`;
+  }).join("");
+}
+
+function renderSessionStates() {
+  sessions.forEach((session) => { session.state = sessionStates[session.id] || session.state; });
+  renderSessions();
+
+  const upcoming = sessions.find((session) => session.state === "upcoming") || sessions.find((session) => session.state === "published");
+  if (upcoming) {
+    document.getElementById("homeUpcomingEyebrow").innerHTML = `<span class="live-dot"></span> Session ${upcoming.n} · upcoming`;
+    document.getElementById("homeUpcomingDate").textContent = `${upcoming.date.toUpperCase()} · ${upcoming.time}`;
+    document.getElementById("homeUpcomingNumber").textContent = upcoming.n;
+    document.getElementById("homeUpcomingKicker").textContent = `SESSION ${upcoming.n} · ${upcoming.n === "02" ? "SIGNAL FOUNDATIONS" : "ACADEMY MEETING"}`;
+    document.getElementById("homeUpcomingTitle").textContent = upcoming.title;
+    document.getElementById("homeUpcomingDescription").textContent = upcoming.desc;
+  }
+  const sessionTwoIsUpcoming = sessionStates.session02 === "upcoming";
+  const adminCheckInButton = document.getElementById("adminOpenCheckIn");
+  const learnerCheckInButton = document.getElementById("openCheckIn");
+  adminCheckInButton.disabled = !sessionTwoIsUpcoming;
+  learnerCheckInButton.disabled = !sessionTwoIsUpcoming;
+  if (!sessionTwoIsUpcoming) {
+    adminCheckInButton.textContent = "Set Session 02 upcoming";
+    learnerCheckInButton.textContent = "Check-in is not open";
+  } else if (!activeCheckInCode) {
+    adminCheckInButton.textContent = "Open check-in";
+    learnerCheckInButton.textContent = hasCheckedIn ? "Checked in ✓" : "Check in when class opens";
+  }
+
+  sessions.forEach((session) => {
+    const state = session.state;
+    const adminState = document.getElementById(`adminState${session.n}`);
+    if (adminState) {
+      adminState.textContent = state.toUpperCase();
+      adminState.className = `session-state ${state}`;
+    }
+    const managerCard = document.querySelector(`[data-manager-session="${session.id}"]`);
+    managerCard?.classList.toggle("featured", state === "upcoming");
+    const journey = document.querySelector(`[data-session="${Number(session.n)}"]`);
+    if (journey) {
+      journey.classList.toggle("complete", state === "past");
+      journey.classList.toggle("current", state === "upcoming");
+      const marker = journey.querySelector("i");
+      marker.textContent = state === "past" ? "✓" : String(Number(session.n));
+      journey.querySelector("span").textContent = `${session.n} · ${state.toUpperCase()}`;
+    }
+    const calendar = document.querySelector(`[data-calendar-session="${session.n}"]`);
+    if (calendar) {
+      calendar.hidden = state === "draft";
+      calendar.classList.toggle("complete", state === "past");
+      calendar.classList.toggle("current", state === "upcoming");
+      calendar.querySelector("small").textContent = `S${session.n} · ${state.toUpperCase()}`;
+    }
+  });
 }
 document.querySelectorAll("[data-learn-view]").forEach((button) => button.addEventListener("click", () => {
   document.querySelectorAll("[data-learn-view]").forEach((item) => item.classList.toggle("active", item === button));
@@ -215,7 +280,7 @@ function renderLearnerProgress(input) {
   const records = Array.isArray(input)
     ? input
     : input
-      ? [{ sessionId: SESSION_ID, sessionTitle: "Fall 2026 Intro Meeting", points: 2 }]
+      ? [{ sessionId: SESSION_ID, sessionTitle: SESSION_TITLE, points: 2 }]
       : [];
   learnerRecords = records;
   hasCheckedIn = records.some((record) => record.sessionId === SESSION_ID);
@@ -224,11 +289,21 @@ function renderLearnerProgress(input) {
   const completedFraction = Math.min(sessionCount / 2, 1);
 
   document.getElementById("homeSessionCount").textContent = String(sessionCount);
-  document.getElementById("homePoints").textContent = String(points).padStart(2, "0");
+  document.getElementById("homePoints").textContent = String(points);
+  document.getElementById("homeActivityCount").textContent = String(records.length);
   document.getElementById("mePoints").textContent = String(points).padStart(2, "0");
   document.getElementById("meSessionCount").textContent = String(sessionCount);
   document.getElementById("meActivityCount").textContent = String(records.length);
-  document.querySelector(".ring-value").style.strokeDashoffset = String(352 * (1 - completedFraction));
+  const ringProgress = [
+    ["ringSessions", 2 * Math.PI * 72, completedFraction],
+    ["ringPoints", 2 * Math.PI * 54, Math.min(points / 20, 1)],
+    ["ringActivities", 2 * Math.PI * 36, Math.min(records.length / 8, 1)]
+  ];
+  ringProgress.forEach(([id, circumference, progress]) => {
+    const ring = document.getElementById(id);
+    ring.style.strokeDasharray = String(circumference);
+    ring.style.strokeDashoffset = String(circumference * (1 - progress));
+  });
 
   const sortedRecords = [...records].sort((a, b) => {
     const aTime = a.checkedInAt?.toMillis?.() || a.occurredAt?.toMillis?.() || 0;
@@ -238,7 +313,9 @@ function renderLearnerProgress(input) {
   document.getElementById("pointsHistory").innerHTML = sortedRecords.length
     ? sortedRecords.map((record) => `<li><span>${safeText(record.activityTitle || record.sessionTitle || "Participation activity")}</span><strong>+${Number(record.points || 0)}</strong></li>`).join("")
     : '<li><span>Your first activity will appear here.</span><strong>—</strong></li>';
-  document.getElementById("openCheckIn").textContent = hasCheckedIn ? "Checked in ✓" : "Check in to session";
+  document.getElementById("openCheckIn").textContent = sessionStates.session02 === "upcoming"
+    ? hasCheckedIn ? "Checked in ✓" : "Check in when class opens"
+    : "Check-in is not open";
   document.getElementById("sessionCheckIn").textContent = hasCheckedIn ? "Checked in ✓" : "Check in";
   renderBadge(points);
 }
@@ -303,9 +380,19 @@ function startLiveData(role, user) {
   unsubscribeAttendance?.();
   unsubscribeRoster?.();
   unsubscribeSession?.();
+  unsubscribeAcademyConfig?.();
   unsubscribeAttendance = null;
   unsubscribeRoster = null;
   unsubscribeSession = null;
+  unsubscribeAcademyConfig = null;
+
+  unsubscribeAcademyConfig = firebaseDb.collection("academyConfig").doc("current").onSnapshot((snapshot) => {
+    sessionStates = { ...DEFAULT_SESSION_STATES, ...(snapshot.data()?.sessionStates || {}) };
+    renderSessionStates();
+  }, (error) => {
+    console.error("Could not load Academy session states", error);
+    renderSessionStates();
+  });
 
   if (role === "student") {
     const attendanceQuery = firebaseDb.collection("attendance").where("uid", "==", user.uid);
@@ -335,10 +422,58 @@ function startLiveData(role, user) {
       const isOpen = Boolean(data?.checkInOpen && (data.expiresAt?.toMillis?.() || 0) > Date.now());
       if (isOpen && data.code) setAdminCheckInCode(data.code);
       if (!isOpen) activeCheckInCode = "";
-      document.getElementById("adminOpenCheckIn").textContent = isOpen ? "Show check-in code" : "Open check-in";
+      const canOpen = sessionStates.session02 === "upcoming";
+      document.getElementById("adminOpenCheckIn").disabled = !canOpen;
+      document.getElementById("adminOpenCheckIn").textContent = canOpen ? isOpen ? "Show check-in code" : "Open check-in" : "Set Session 02 upcoming";
     });
   }
 }
+
+document.getElementById("adminSessionManager").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-set-session]");
+  if (!button) return;
+  const sessionId = button.dataset.setSession;
+  const nextState = button.dataset.state;
+  const nextStates = { ...sessionStates };
+  if (nextState === "upcoming") {
+    Object.keys(nextStates).forEach((id) => {
+      if (nextStates[id] === "upcoming") nextStates[id] = "published";
+    });
+  }
+  nextStates[sessionId] = nextState;
+  const session = sessions.find((item) => item.id === sessionId);
+  const status = document.getElementById("sessionManagerStatus");
+  if (!currentFirebaseUser || !firebaseDb) {
+    sessionStates = nextStates;
+    renderSessionStates();
+    status.textContent = `Preview: Session ${session.n} is now ${nextState}.`;
+    return;
+  }
+  button.disabled = true;
+  status.textContent = "Saving session status…";
+  try {
+    const batch = firebaseDb.batch();
+    batch.set(firebaseDb.collection("academyConfig").doc("current"), {
+      sessionStates: nextStates,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: currentFirebaseUser.email || "admin"
+    }, { merge: true });
+    if (sessionId === SESSION_ID && nextState !== "upcoming") {
+      batch.set(firebaseDb.collection("checkins").doc(SESSION_ID), {
+        checkInOpen: false,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+    await batch.commit();
+    status.textContent = `Session ${session.n} is now ${nextState}. Learner views updated.`;
+    showToast(`Session ${session.n} set to ${nextState}.`);
+  } catch (error) {
+    console.error("Could not update session status", error);
+    status.textContent = "Could not save. Confirm you are signed in with the admin account.";
+  } finally {
+    button.disabled = false;
+  }
+});
 
 const dialog = document.getElementById("checkInDialog");
 const inputs = [...document.querySelectorAll(".code-inputs input")];
@@ -430,7 +565,7 @@ submitCode.addEventListener("click", async () => {
       email: currentFirebaseUser.email || "",
       name: currentFirebaseUser.displayName || currentFirebaseUser.email?.split("@")[0] || "Academy member",
       sessionId: SESSION_ID,
-      sessionTitle: "Fall 2026 Intro Meeting",
+      sessionTitle: SESSION_TITLE,
       points: 2,
       checkInCode: code,
       checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -515,7 +650,7 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     batch.set(firebaseDb.collection("sessions").doc(SESSION_ID), {
-      title: "Fall 2026 Intro Meeting",
+      title: SESSION_TITLE,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -575,7 +710,7 @@ document.getElementById("copyAcademyLink").addEventListener("click", async () =>
 
 document.getElementById("exportAttendance").addEventListener("click", () => {
   if (!adminAttendanceRecords.length) {
-    showToast("There are no Session 01 attendance records to export yet.");
+    showToast("There are no Session 02 attendance records to export yet.");
     return;
   }
   const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -594,7 +729,7 @@ document.getElementById("exportAttendance").addEventListener("click", () => {
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = "neurotech-session-01-attendance.csv";
+  link.download = "neurotech-session-02-attendance.csv";
   link.click();
   URL.revokeObjectURL(url);
   showToast("Attendance CSV downloaded.");
@@ -629,7 +764,7 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
 }
 
-renderSessions();
+renderSessionStates();
 renderResources();
 const localPreviewRole = location.protocol === "file:" ? new URLSearchParams(location.search).get("preview") : null;
 if (["student", "admin"].includes(localPreviewRole)) localStorage.setItem("neurotech-auth-demo", localPreviewRole);

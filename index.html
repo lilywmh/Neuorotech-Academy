@@ -8,8 +8,9 @@
     <title>Neurotech@USC Academy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Syne:wght@500;600;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400&amp;family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="library-theme.css" />
   </head>
   <body class="auth-locked">
     <div class="noise" aria-hidden="true"></div>
@@ -84,12 +85,12 @@
       <section class="page active" id="home-page" aria-labelledby="home-title">
         <div class="hero-grid">
           <div class="hero-copy reveal">
-            <div class="eyebrow"><span class="live-dot"></span> Session 01 · today</div>
+            <div class="eyebrow" id="homeUpcomingEyebrow"><span class="live-dot"></span> Session 02 · upcoming</div>
             <h1 id="home-title">Neurotech<br /><em>Academy.</em></h1>
-            <p class="hero-subtitle">Fall 2026 · We’ll build the Academy together, one session at a time.</p>
+            <p class="hero-subtitle">A calm place to prepare, learn, and keep track of your Neurotech@USC Academy work.</p>
             <div class="hero-actions">
-              <button class="button primary" id="openCheckIn">Check in to session</button>
-              <button class="button text-button" data-route="session">View this week’s lesson <span>→</span></button>
+              <button class="button primary" id="openCheckIn">Check in when class opens</button>
+              <button class="button text-button" data-route="learn">View course plan <span>→</span></button>
             </div>
           </div>
 
@@ -111,22 +112,22 @@
         <div class="dashboard-grid reveal delay-2">
           <article class="next-card">
             <div class="section-heading">
-              <div><span class="section-number">01</span><h2>Do this next</h2></div>
-              <span class="session-date">SEP 24 · 6:00 PM</span>
+              <div><span class="section-number">01</span><h2>Next session</h2></div>
+              <span class="session-date" id="homeUpcomingDate">OCT 01 · 7:00 PM</span>
             </div>
             <div class="lesson-summary">
-              <div class="lesson-index">01</div>
+              <div class="lesson-index" id="homeUpcomingNumber">02</div>
               <div>
-                <p class="kicker">SESSION 01 · INTRO MEETING</p>
-                <h3>Fall 2026 Intro Meeting</h3>
-                <p>Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.</p>
-                <div class="lesson-meta"><span>◷ 50 min</span><span>⌁ Bring a laptop</span><span>◎ In person</span></div>
+                <p class="kicker" id="homeUpcomingKicker">SESSION 02 · SIGNAL FOUNDATIONS</p>
+                <h3 id="homeUpcomingTitle">Where Signals Come From</h3>
+                <p id="homeUpcomingDescription">Build a practical map from neurons and electrodes to the signals we can actually measure.</p>
+                <div class="lesson-meta"><span>7:00 PM</span><span>Bring a laptop</span><span>In person</span></div>
               </div>
             </div>
             <div class="prep-strip">
               <span class="check-icon">✓</span>
-              <div><strong>Before you arrive</strong><small>Bring a laptop and sign in to your Google account.</small></div>
-              <a href="https://docs.google.com/presentation/d/1gj3dmym0TYjCVJcDoW1_9KqIDwUPkEF42ZxRKyblkP0/edit?usp=sharing" target="_blank" rel="noreferrer" aria-label="Open welcome slides">Open slides ↗</a>
+              <div><strong>Before you arrive</strong><small>Bring a laptop. Session materials will appear here when published.</small></div>
+              <button class="prep-link" data-route="learn">Course outline →</button>
             </div>
           </article>
 
@@ -135,17 +136,23 @@
               <div><span class="section-number">02</span><h2>Your progress</h2></div>
               <button class="mini-link" data-route="me">DETAILS</button>
             </div>
-            <div class="ring-wrap">
-              <svg class="progress-ring" viewBox="0 0 140 140" aria-hidden="true">
-                <circle class="ring-track" cx="70" cy="70" r="56" />
-                <circle class="ring-value" cx="70" cy="70" r="56" />
+            <div class="activity-rings" aria-label="Academy activity rings">
+              <svg viewBox="0 0 190 190" aria-hidden="true">
+                <g transform="rotate(-90 95 95)">
+                  <circle class="activity-track" cx="95" cy="95" r="72" />
+                  <circle class="activity-value sessions-ring" id="ringSessions" cx="95" cy="95" r="72" />
+                  <circle class="activity-track" cx="95" cy="95" r="54" />
+                  <circle class="activity-value points-ring" id="ringPoints" cx="95" cy="95" r="54" />
+                  <circle class="activity-track" cx="95" cy="95" r="36" />
+                  <circle class="activity-value activities-ring" id="ringActivities" cx="95" cy="95" r="36" />
+                </g>
               </svg>
-              <div class="ring-label"><strong><b id="homeSessionCount">0</b><span>/2</span></strong><small>published sessions</small></div>
+              <div class="activity-center"><strong id="homeSessionCount">0</strong><small>sessions</small></div>
             </div>
-            <div class="progress-stats">
-              <div><strong id="homePoints">00</strong><small>participation<br />points</small></div>
-              <div><strong id="homeCheckpoints">00</strong><small>checkpoints<br />complete</small></div>
-              <div><strong id="homeExtensions">00</strong><small>optional<br />extension</small></div>
+            <div class="ring-legend">
+              <span><i class="sessions-dot"></i><b>Sessions</b></span>
+              <span><i class="points-dot"></i><b id="homePoints">0</b> points</span>
+              <span><i class="activities-dot"></i><b id="homeActivityCount">0</b> activities</span>
             </div>
           </article>
         </div>
@@ -157,8 +164,8 @@
           </div>
           <div class="journey-track two-sessions">
             <span class="track-progress"></span>
-            <button class="journey-stop current" data-session="1"><i>1</i><span>01</span><strong>Fall 2026 Intro Meeting</strong><small>SEP 24</small></button>
-            <button class="journey-stop" data-session="2"><i>2</i><span>02</span><strong>Where Signals Come From</strong><small>OCT 01</small></button>
+            <button class="journey-stop complete" data-session="1"><i>✓</i><span>01 · PAST</span><strong>Fall 2026 Intro Meeting</strong><small>SEP 24 · 6:00 PM</small></button>
+            <button class="journey-stop current" data-session="2"><i>2</i><span>02 · UPCOMING</span><strong>Where Signals Come From</strong><small>OCT 01 · 7:00 PM</small></button>
           </div>
         </section>
 
@@ -208,7 +215,7 @@
           </div>
         </div>
         <div class="learn-view" id="calendarView">
-          <div class="calendar-key"><span><i class="next"></i>Today</span><span><i></i>Upcoming</span></div>
+          <div class="calendar-key"><span><i class="done"></i>Past</span><span><i></i>Upcoming</span></div>
           <div class="calendar-months">
             <section class="calendar-month">
               <div class="calendar-title"><h2>September 2026</h2><span>1 session</span></div>
@@ -219,7 +226,7 @@
                 <span class="calendar-day"><b>7</b></span><span class="calendar-day"><b>8</b></span><span class="calendar-day"><b>9</b></span><span class="calendar-day"><b>10</b></span><span class="calendar-day"><b>11</b></span><span class="calendar-day weekend"><b>12</b></span><span class="calendar-day weekend"><b>13</b></span>
                 <span class="calendar-day"><b>14</b></span><span class="calendar-day"><b>15</b></span><span class="calendar-day"><b>16</b></span><span class="calendar-day"><b>17</b></span><span class="calendar-day"><b>18</b></span><span class="calendar-day weekend"><b>19</b></span><span class="calendar-day weekend"><b>20</b></span>
                 <span class="calendar-day"><b>21</b></span><span class="calendar-day"><b>22</b></span><span class="calendar-day"><b>23</b></span>
-                <button class="calendar-day event current"><b>24</b><small>S01 · TODAY</small><strong>Welcome</strong></button>
+                <button class="calendar-day event complete" data-calendar-session="01"><b>24</b><small>S01 · PAST</small><strong>Welcome</strong></button>
                 <span class="calendar-day"><b>25</b></span><span class="calendar-day weekend"><b>26</b></span><span class="calendar-day weekend"><b>27</b></span>
                 <span class="calendar-day"><b>28</b></span><span class="calendar-day"><b>29</b></span><span class="calendar-day"><b>30</b></span>
               </div>
@@ -229,7 +236,7 @@
               <div class="calendar-grid weekday-row"><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
               <div class="calendar-grid calendar-days">
                 <span class="empty"></span><span class="empty"></span><span class="empty"></span>
-                <button class="calendar-day event"><b>1</b><small>S02</small><strong>Signal origins</strong></button>
+                <button class="calendar-day event current" data-calendar-session="02"><b>1</b><small>S02 · UPCOMING</small><strong>Signal origins</strong></button>
                 <span class="calendar-day"><b>2</b></span><span class="calendar-day weekend"><b>3</b></span><span class="calendar-day weekend"><b>4</b></span>
                 <span class="calendar-day"><b>5</b></span><span class="calendar-day"><b>6</b></span><span class="calendar-day"><b>7</b></span>
                 <span class="calendar-day"><b>8</b></span>
@@ -246,7 +253,7 @@
               </div>
             </section>
           </div>
-          <p class="calendar-note"><strong>Currently published:</strong> September 24 and October 1. Later dates will appear after the curriculum is confirmed.</p>
+          <p class="calendar-note"><strong>Current schedule:</strong> Session 01 is archived; Session 02 is next on October 1 at 7:00 PM. Admins control which sessions are published and upcoming.</p>
         </div>
       </section>
 
@@ -273,7 +280,7 @@
         <div class="session-detail-layout">
           <article class="session-content">
             <section class="question-block">
-              <span class="content-label">TODAY’S QUESTION</span>
+              <span class="content-label">SESSION QUESTION</span>
               <h2>How do we know a brain signal actually means something?</h2>
             </section>
 
@@ -287,7 +294,7 @@
             </section>
 
             <section class="content-section">
-              <div class="content-section-heading"><span>02</span><div><h2>Today’s plan</h2><p>50 minutes · group activities included</p></div></div>
+              <div class="content-section-heading"><span>02</span><div><h2>Session plan</h2><p>50 minutes · group activities included</p></div></div>
               <div class="agenda-list">
                 <div class="agenda-item"><time>0–5</time><div><strong>Welcome and check-in</strong><p>Settle in and enter the session code.</p></div><span>5 MIN</span></div>
                 <div class="agenda-item"><time>5–9</time><div><strong>Meet the team</strong><p>Lily Wu, Lily Hirasawa, and Jason Mo introduce the Academy.</p></div><span>4 MIN</span></div>
@@ -327,8 +334,8 @@
           <aside class="session-sidebar">
             <div class="session-sidebar-card">
               <span class="content-label">SESSION STATUS</span>
-              <div class="status-line"><i></i><strong>Happening today</strong></div>
-              <button class="button primary wide" id="sessionCheckIn">Check in</button>
+              <div class="status-line past"><i></i><strong>Past session</strong></div>
+              <button class="button primary wide" id="sessionCheckIn" disabled>Check-in closed</button>
             </div>
             <div class="session-sidebar-card prep-card">
               <span class="content-label">BEFORE CLASS</span>
@@ -390,7 +397,7 @@
             <div class="big-number"><b id="mePoints">00</b> <span>points</span></div>
             <div class="participation-mini"><span><b id="meSessionCount">0</b><small>sessions</small></span><span><b id="meActivityCount">0</b><small>activities</small></span></div>
             <ul id="pointsHistory">
-              <li><span>Check in to Session 01 today</span><strong>+2</strong></li>
+              <li><span>Your Academy activities will appear here.</span><strong>—</strong></li>
             </ul>
           </article>
         </div>
@@ -398,13 +405,29 @@
 
       <section class="page" id="admin-page" aria-labelledby="admin-title">
         <div class="admin-header">
-          <div><p class="kicker">ADMIN VIEW</p><h1 id="admin-title">Academy dashboard</h1><p>Thursday, September 24 · Session 01</p></div>
+          <div><p class="kicker">ADMIN VIEW</p><h1 id="admin-title">Academy dashboard</h1><p>Publish sessions, choose what is upcoming, and open check-in when class begins.</p></div>
           <button class="button primary" id="adminOpenCheckIn">Open check-in</button>
         </div>
+        <section class="session-manager" aria-labelledby="sessionManagerTitle">
+          <div class="manager-heading"><div><p class="panel-label">SESSION CONTROL</p><h2 id="sessionManagerTitle">What learners see</h2></div><p>Only published, upcoming, and past sessions appear to learners. Draft sessions stay private.</p></div>
+          <div class="manager-grid" id="adminSessionManager">
+            <article class="manager-card" data-manager-session="session01">
+              <div><span class="manager-number">01</span><span class="session-state past" id="adminState01">PAST</span></div>
+              <h3>Fall 2026 Intro Meeting</h3><p>September 24 · 6:00 PM</p>
+              <div class="manager-actions"><button data-set-session="session01" data-state="published">Publish archive</button><button data-set-session="session01" data-state="past">Keep past</button></div>
+            </article>
+            <article class="manager-card featured" data-manager-session="session02">
+              <div><span class="manager-number">02</span><span class="session-state upcoming" id="adminState02">UPCOMING</span></div>
+              <h3>Where Signals Come From</h3><p>October 1 · 7:00 PM</p>
+              <div class="manager-actions"><button data-set-session="session02" data-state="published">Publish</button><button data-set-session="session02" data-state="upcoming">Set upcoming</button><button data-set-session="session02" data-state="past">Expire</button></div>
+            </article>
+          </div>
+          <p class="manager-status" id="sessionManagerStatus" role="status">Session 02 is currently shown as the next Academy meeting.</p>
+        </section>
         <div class="admin-metrics">
           <article><small>REGISTERED MEMBERS</small><strong>60</strong><p>Before the first session</p></article>
-          <article><small>AVG. ATTENDANCE</small><strong>—</strong><p>Available after today</p></article>
-          <article><small>CHECKPOINT RATE</small><strong>—</strong><p>Available after Session 01</p></article>
+          <article><small>AVG. ATTENDANCE</small><strong>—</strong><p>Updates as records accumulate</p></article>
+          <article><small>CHECKPOINT RATE</small><strong>—</strong><p>Optional work is not open yet</p></article>
           <article><small>NEEDS FOLLOW-UP</small><strong>00</strong><p>No attendance history yet</p></article>
         </div>
         <div class="admin-main">
@@ -415,10 +438,10 @@
           </article>
           <article class="admin-actions">
             <p class="panel-label">ADMIN WORKFLOW</p>
-            <button id="createSessionAction" disabled><span>＋</span><div><strong>Create the next session</strong><small>Coming next: title, date, points, slides, and publish controls</small></div><b>PLANNED</b></button>
+            <button id="createSessionAction" disabled><span>＋</span><div><strong>Create a new session</strong><small>Coming next: add title, date, description, slides, and points</small></div><b>PLANNED</b></button>
             <button id="importPointsAction" disabled><span>⇅</span><div><strong>Import participation points</strong><small>Coming next: map a Google Form response sheet into member points</small></div><b>PLANNED</b></button>
             <button id="copyAcademyLink"><span>↗</span><div><strong>Copy learner website</strong><small>Share the Academy login link in Slack or on a slide</small></div></button>
-            <button id="exportAttendance"><span>↓</span><div><strong>Export this attendance</strong><small>Download the current Session 01 check-in list as CSV</small></div></button>
+            <button id="exportAttendance"><span>↓</span><div><strong>Export this attendance</strong><small>Download the current Session 02 check-in list as CSV</small></div></button>
             <p class="admin-workflow-note">Google Drive is only where your slides and Forms live. The Academy website stores sessions, check-ins, and point records in Firestore.</p>
           </article>
         </div>
@@ -426,16 +449,16 @@
     </main>
 
     <nav class="mobile-nav" aria-label="Mobile navigation">
-      <button class="active" data-route="home"><span>⌂</span>Home</button>
-      <button data-route="learn"><span>⌁</span>Learn</button>
-      <button data-route="library"><span>▤</span>Library</button>
-      <button data-route="me"><span>○</span>Me</button>
+      <button class="active" data-route="home"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M9 20v-6h6v6"/></svg></span>Home</button>
+      <button data-route="learn"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-5 4 10 3-7 2 2h4"/></svg></span>Learn</button>
+      <button data-route="library"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21zM20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5A2.5 2.5 0 0 1 20 21z"/></svg></span>Library</button>
+      <button data-route="me"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20c.7-4 3-6 6.5-6s5.8 2 6.5 6"/></svg></span>Me</button>
     </nav>
 
     <dialog class="checkin-dialog" id="checkInDialog">
       <button class="dialog-close" id="closeCheckIn" aria-label="Close">×</button>
       <div class="checkin-step active" data-step="code">
-        <p class="kicker">SESSION 01 · CHECK-IN</p>
+        <p class="kicker">SESSION 02 · CHECK-IN</p>
         <h2>Good to see you.</h2>
         <p>Enter the six-digit code shown in the room.</p>
         <div class="code-inputs" id="codeInputs">
@@ -448,8 +471,8 @@
       <div class="checkin-step success" data-step="success">
         <div class="success-mark">✓</div>
         <p class="kicker">YOU’RE CHECKED IN</p>
-        <h2>Session 01</h2>
-        <p>Fall 2026 Intro Meeting · +2 participation points</p>
+        <h2>Session 02</h2>
+        <p>Where Signals Come From · +2 participation points</p>
         <button class="button dark wide" id="finishCheckIn">Back to Academy</button>
       </div>
     </dialog>
@@ -458,7 +481,7 @@
       <button class="admin-dialog-close" id="closeAdminCheckIn" aria-label="Close display">×</button>
       <div class="admin-checkin-main">
         <div class="checkin-live-label"><i></i> CHECK-IN OPEN</div>
-        <p class="admin-session-label">NEUROTECH@USC ACADEMY · SESSION 01</p>
+        <p class="admin-session-label">NEUROTECH@USC ACADEMY · SESSION 02</p>
         <h2>Enter this code</h2>
         <div class="display-code" id="adminDisplayCode" aria-label="Check-in code"><span id="adminCodeFirst">---</span><i></i><span id="adminCodeLast">---</span></div>
         <p class="display-instruction">Open the Academy website, tap <strong>Check in to session</strong>, and enter the code.</p>
@@ -466,9 +489,9 @@
       </div>
       <aside class="admin-checkin-side">
         <div class="checkin-side-top">
-          <span>SESSION 01</span>
+          <span>SESSION 02</span>
           <strong>Fall 2026 Intro Meeting</strong>
-          <small>Thursday, September 24 · 6:00 PM</small>
+          <small>Thursday, October 1 · 7:00 PM</small>
         </div>
         <div class="checkin-live-count"><strong id="modalAttendanceNumber">0</strong><span>checked in</span></div>
         <div class="checkin-timer"><span>Code expires in</span><strong id="checkInTimer">15:00</strong></div>
