@@ -329,14 +329,15 @@ function startLiveData(role, user) {
     });
   }
 
-  unsubscribeSession = firebaseDb.collection("sessions").doc(SESSION_ID).onSnapshot((snapshot) => {
-    if (role !== "admin") return;
-    const data = snapshot.data();
-    const isOpen = Boolean(data?.checkInOpen && (data.expiresAt?.toMillis?.() || 0) > Date.now());
-    if (isOpen && data.code) setAdminCheckInCode(data.code);
-    if (!isOpen) activeCheckInCode = "";
-    document.getElementById("adminOpenCheckIn").textContent = isOpen ? "Show check-in code" : "Open check-in";
-  });
+  if (role === "admin") {
+    unsubscribeSession = firebaseDb.collection("checkins").doc(SESSION_ID).onSnapshot((snapshot) => {
+      const data = snapshot.data();
+      const isOpen = Boolean(data?.checkInOpen && (data.expiresAt?.toMillis?.() || 0) > Date.now());
+      if (isOpen && data.code) setAdminCheckInCode(data.code);
+      if (!isOpen) activeCheckInCode = "";
+      document.getElementById("adminOpenCheckIn").textContent = isOpen ? "Show check-in code" : "Open check-in";
+    });
+  }
 }
 
 const dialog = document.getElementById("checkInDialog");
@@ -413,26 +414,14 @@ submitCode.addEventListener("click", async () => {
   submitCode.disabled = true;
   submitCode.textContent = "Checking…";
   try {
-    const sessionRef = firebaseDb.collection("sessions").doc(SESSION_ID);
     const attendanceRef = firebaseDb.collection("attendance").doc(`${SESSION_ID}_${currentFirebaseUser.uid}`);
-    const [sessionSnapshot, attendanceSnapshot] = await Promise.all([sessionRef.get(), attendanceRef.get()]);
+    const attendanceSnapshot = await attendanceRef.get();
 
     if (attendanceSnapshot.exists) {
       hasCheckedIn = true;
       renderLearnerProgress(learnerRecords.length ? learnerRecords : [attendanceSnapshot.data()]);
       setCheckInSuccess();
       showToast("You already checked in — no duplicate was added.");
-      return;
-    }
-
-    const sessionData = sessionSnapshot.data();
-    const expiresAt = sessionData?.expiresAt?.toMillis?.() || 0;
-    if (!sessionSnapshot.exists || !sessionData.checkInOpen || expiresAt <= Date.now()) {
-      setCheckInStatus("Check-in is closed or the 15-minute code has expired. Ask the session lead to open it again.");
-      return;
-    }
-    if (code !== sessionData.code) {
-      setCheckInStatus("That code doesn’t match. Check the screen and try again.");
       return;
     }
 
@@ -452,7 +441,7 @@ submitCode.addEventListener("click", async () => {
     setCheckInSuccess();
   } catch (error) {
     console.error("Check-in failed", error);
-    setCheckInStatus(error.code === "permission-denied" ? "Your sign-in could not be verified. Sign out, sign in with Google again, and retry while check-in is open." : "Check-in could not save. Check your connection and try again.");
+    setCheckInStatus(error.code === "permission-denied" ? "That code is incorrect, closed, or expired. Check the screen and try again." : "Check-in could not save. Check your connection and try again.");
   } finally {
     submitCode.textContent = "Check in";
     submitCode.disabled = inputs.some((input) => !input.value);
@@ -506,25 +495,32 @@ document.getElementById("adminOpenCheckIn").addEventListener("click", async () =
     return;
   }
   try {
-    const sessionRef = firebaseDb.collection("sessions").doc(SESSION_ID);
-    const sessionSnapshot = await sessionRef.get();
-    const sessionData = sessionSnapshot.data();
-    const existingExpiry = sessionData?.expiresAt?.toMillis?.() || 0;
-    if (sessionData?.checkInOpen && existingExpiry > Date.now() && sessionData.code) {
-      showAdminCheckIn(existingExpiry, sessionData.code);
+    const checkInRef = firebaseDb.collection("checkins").doc(SESSION_ID);
+    const checkInSnapshot = await checkInRef.get();
+    const checkInData = checkInSnapshot.data();
+    const existingExpiry = checkInData?.expiresAt?.toMillis?.() || 0;
+    if (checkInData?.checkInOpen && existingExpiry > Date.now() && checkInData.code) {
+      showAdminCheckIn(existingExpiry, checkInData.code);
       showToast("Showing the current check-in code. It has not changed.");
       return;
     }
 
     const expiresAt = Date.now() + 15 * 60 * 1000;
     const code = generateCheckInCode();
-    await sessionRef.set({
-      title: "Fall 2026 Intro Meeting",
+    const batch = firebaseDb.batch();
+    batch.set(checkInRef, {
       code,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+    batch.set(firebaseDb.collection("sessions").doc(SESSION_ID), {
+      title: "Fall 2026 Intro Meeting",
+      checkInOpen: true,
+      expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    await batch.commit();
     showAdminCheckIn(expiresAt, code);
     showToast("A new six-digit code is open for 15 minutes.");
   } catch (error) {
@@ -547,10 +543,14 @@ document.getElementById("copyCheckInCode").addEventListener("click", async () =>
 document.getElementById("endCheckIn").addEventListener("click", async () => {
   if (currentFirebaseUser && firebaseDb) {
     try {
-      await firebaseDb.collection("sessions").doc(SESSION_ID).set({
+      const batch = firebaseDb.batch();
+      const closedState = {
         checkInOpen: false,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+      };
+      batch.set(firebaseDb.collection("checkins").doc(SESSION_ID), closedState, { merge: true });
+      batch.set(firebaseDb.collection("sessions").doc(SESSION_ID), closedState, { merge: true });
+      await batch.commit();
     } catch (error) {
       console.error("Could not close check-in", error);
       showToast("Could not close check-in. Try again.");
