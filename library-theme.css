@@ -894,6 +894,8 @@ body::before { opacity: .28; background-size: 56px 56px; }
   }
 
   .role-view-switch { margin-left: 0; }
+  .admin-mode .topbar { grid-template-columns: auto 1fr auto; }
+  .admin-mode .role-view-switch { justify-self: center; }
 }
 
 @media (min-width: 981px) and (max-width: 1220px) {
@@ -922,6 +924,33 @@ body::before { opacity: .28; background-size: 56px 56px; }
   outline: 3px solid var(--mint);
   outline-offset: 2px;
 }
+
+.role-view-switch button[hidden] { display: none; }
+.role-view-switch.is-context-action {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.role-view-switch.is-context-action button {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid rgba(170,205,219,.36);
+  border-radius: 999px;
+  color: #e7f4f8;
+  background: rgba(255,255,255,.075);
+  box-shadow: none;
+  font-size: 10px;
+  letter-spacing: .04em;
+  transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
+}
+.role-view-switch.is-context-action button:hover {
+  border-color: rgba(255,255,255,.72);
+  background: rgba(255,255,255,.15);
+  transform: translateY(-1px);
+}
+.admin-mode .brand-copy small { color: var(--mint); }
+.admin-mode .profile-menu { width: 190px; }
 
 @media (max-width: 980px) {
   .topbar { gap: 12px; }

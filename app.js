@@ -128,9 +128,19 @@ function navigate(route) {
   }
   const isAdminRoute = currentUserRole === "admin" && route === "admin";
   document.body.classList.toggle("admin-mode", isAdminRoute);
-  document.querySelectorAll("[data-role-view]").forEach((button) => button.classList.toggle("active", button.dataset.roleView === (isAdminRoute ? "admin" : "learner")));
+  const learnerViewButton = document.querySelector('[data-role-view="learner"]');
   const adminViewButton = document.querySelector('[data-role-view="admin"]');
-  if (adminViewButton) adminViewButton.textContent = isAdminRoute ? "Admin" : "← Back to admin";
+  const adminHasContextAction = currentUserRole === "admin";
+  document.getElementById("roleViewSwitch").classList.toggle("is-context-action", adminHasContextAction);
+  if (adminHasContextAction) {
+    learnerViewButton.hidden = !isAdminRoute;
+    adminViewButton.hidden = isAdminRoute;
+    learnerViewButton.classList.remove("active");
+    adminViewButton.classList.remove("active");
+    learnerViewButton.textContent = "View learner site ↗";
+    adminViewButton.textContent = "← Back to admin";
+  }
+  document.querySelector(".brand-copy small").textContent = isAdminRoute ? "ADMIN CONSOLE · FALL 2026" : "ACADEMY · FALL 2026";
   pages.forEach((page) => page.classList.toggle("active", page.id === `${route}-page`));
   const navRoute = route === "session" ? "learn" : route;
   routeButtons.forEach((button) => {
@@ -143,6 +153,10 @@ function navigate(route) {
 }
 
 routeButtons.forEach((button) => button.addEventListener("click", () => navigate(button.dataset.route)));
+document.querySelector(".brand").addEventListener("click", (event) => {
+  event.preventDefault();
+  navigate(currentUserRole === "admin" ? "admin" : "home");
+});
 profileButton.addEventListener("click", (event) => {
   event.stopPropagation();
   const open = profileMenu.classList.toggle("open");
@@ -173,12 +187,12 @@ function completeSignIn(role, destination = role === "admin" ? "admin" : "home",
   if (persistDemo) localStorage.setItem("neurotech-auth-demo", role);
   authScreen.hidden = true;
   document.body.classList.remove("auth-locked");
-  adminToggle.hidden = role !== "admin";
+  adminToggle.hidden = true;
   document.getElementById("roleViewSwitch").hidden = role !== "admin";
   const progressButton = document.getElementById("profileProgressButton");
-  progressButton.hidden = false;
-  progressButton.dataset.route = role === "admin" ? "home" : "me";
-  progressButton.textContent = role === "admin" ? "View learner site" : "View my progress";
+  progressButton.hidden = role === "admin";
+  progressButton.dataset.route = "me";
+  progressButton.textContent = "View my progress";
   document.getElementById("profileRole").textContent = role === "admin" ? "Academy admin" : "Academy member";
   if (user) {
     const displayName = user.displayName || user.email?.split("@")[0] || "Academy member";
