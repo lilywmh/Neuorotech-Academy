@@ -12,8 +12,7 @@ service cloud.firestore {
     }
 
     match /sessions/{sessionId} {
-      allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
+      allow read, create, update, delete: if isAdmin();
     }
 
     // Active codes are intentionally separated from learner-readable session metadata.
