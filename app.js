@@ -184,6 +184,7 @@ function setAuthError(message = "") {
 
 function completeSignIn(role, destination = role === "admin" ? "admin" : "home", user = null, persistDemo = false) {
   currentUserRole = role;
+  document.body.classList.toggle("admin-user", role === "admin");
   if (persistDemo) localStorage.setItem("neurotech-auth-demo", role);
   authScreen.hidden = true;
   document.body.classList.remove("auth-locked");
@@ -264,7 +265,7 @@ function showSignedOut() {
   currentFirebaseUser = null;
   hasCheckedIn = false;
   currentUserRole = null;
-  document.body.classList.remove("admin-mode");
+  document.body.classList.remove("admin-mode", "admin-user");
   localStorage.removeItem("neurotech-auth-demo");
   localStorage.removeItem("neurotech-checkin");
   authScreen.hidden = false;

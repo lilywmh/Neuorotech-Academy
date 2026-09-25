@@ -882,7 +882,7 @@ body::before { opacity: .28; background-size: 56px 56px; }
 @media (min-width: 981px) {
   .topbar {
     display: grid;
-    grid-template-columns: auto auto auto auto;
+    grid-template-columns: auto 1fr auto;
     justify-content: space-between;
     column-gap: clamp(12px, 1.7vw, 28px);
   }
@@ -890,10 +890,12 @@ body::before { opacity: .28; background-size: 56px 56px; }
   .desktop-nav {
     position: static;
     left: auto;
+    justify-self: center;
     transform: none;
   }
 
   .role-view-switch { margin-left: 0; }
+  .admin-user:not(.admin-mode) .topbar { grid-template-columns: auto auto auto auto; }
   .admin-mode .topbar { grid-template-columns: auto 1fr auto; }
   .admin-mode .role-view-switch { justify-self: center; }
 }
@@ -925,7 +927,7 @@ body::before { opacity: .28; background-size: 56px 56px; }
   outline-offset: 2px;
 }
 
-.role-view-switch button[hidden] { display: none; }
+.role-view-switch[hidden], .role-view-switch button[hidden] { display: none !important; }
 .role-view-switch.is-context-action {
   padding: 0;
   border: 0;
