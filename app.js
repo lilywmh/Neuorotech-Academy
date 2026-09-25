@@ -36,6 +36,8 @@ let adminMembers = [];
 let adminAllActivity = [];
 let adminRosterRows = [];
 let memberRosterFilter = "all";
+let pendingCsvRows = [];
+let currentAdminView = "overview";
 const PREVIEW_CHECK_IN_CODE = "092426";
 const SESSION_ID = "session02";
 const SESSION_TITLE = "Where Signals Come From";
@@ -110,10 +112,12 @@ function setAuthError(message = "") {
 
 function completeSignIn(role, destination = role === "admin" ? "admin" : "home", user = null, persistDemo = false) {
   currentUserRole = role;
+  document.body.classList.toggle("admin-mode", role === "admin");
   if (persistDemo) localStorage.setItem("neurotech-auth-demo", role);
   authScreen.hidden = true;
   document.body.classList.remove("auth-locked");
   adminToggle.hidden = role !== "admin";
+  document.getElementById("profileProgressButton").hidden = role === "admin";
   document.getElementById("profileRole").textContent = role === "admin" ? "Academy admin" : "Academy member";
   if (user) {
     const displayName = user.displayName || user.email?.split("@")[0] || "Academy member";
@@ -121,6 +125,10 @@ function completeSignIn(role, destination = role === "admin" ? "admin" : "home",
     document.getElementById("profileName").textContent = displayName;
     document.getElementById("profileInitials").textContent = initials || "NA";
     document.getElementById("meDisplayName").textContent = displayName;
+    if (role === "student") {
+      hasCheckedIn = false;
+      renderLearnerProgress([]);
+    }
   }
   if (persistDemo && role === "student") {
     hasCheckedIn = localStorage.getItem("neurotech-checkin") === SESSION_ID;
@@ -179,10 +187,13 @@ function showSignedOut() {
   currentFirebaseUser = null;
   hasCheckedIn = false;
   currentUserRole = null;
+  document.body.classList.remove("admin-mode");
   localStorage.removeItem("neurotech-auth-demo");
+  localStorage.removeItem("neurotech-checkin");
   authScreen.hidden = false;
   document.body.classList.add("auth-locked");
   adminToggle.hidden = true;
+  document.getElementById("profileProgressButton").hidden = false;
   profileMenu.classList.remove("open");
   history.replaceState(null, "", "#home");
 }
@@ -198,6 +209,7 @@ function initializeFirebaseAuth(destination = "home") {
   firebaseAuth.onAuthStateChanged((user) => {
     if (!user) { if (!localStorage.getItem("neurotech-auth-demo")) showSignedOut(); return; }
     localStorage.removeItem("neurotech-auth-demo");
+    localStorage.removeItem("neurotech-checkin");
     const email = (user.email || "").toLowerCase();
     const role = (window.NEUROTECH_ADMIN_EMAILS || []).includes(email) ? "admin" : "student";
     currentFirebaseUser = user;
@@ -623,6 +635,7 @@ function renderMemberRoster() {
       <td><button class="member-view-button" data-view-member="${safeText(member.uid)}">View</button></td>
     </tr>`;
   }).join("") : `<tr><td colspan="7" class="member-roster-empty">${adminRosterRows.length ? "No learners match this filter." : "Member profiles will appear after learners sign in."}</td></tr>`;
+  if (currentAdminView === "points") renderPointsWorkspace();
 }
 
 function openMemberDetail(uid) {
@@ -653,6 +666,201 @@ document.getElementById("memberRosterBody").addEventListener("click", (event) =>
   if (button) openMemberDetail(button.dataset.viewMember);
 });
 document.getElementById("closeMemberDetail").addEventListener("click", () => document.getElementById("memberDetailDialog").close());
+
+function setAdminView(view) {
+  currentAdminView = view;
+  document.querySelectorAll("[data-admin-view]").forEach((button) => button.classList.toggle("active", button.dataset.adminView === view));
+  document.querySelectorAll("[data-admin-panel]").forEach((panel) => { panel.hidden = panel.dataset.adminPanel !== view; });
+  document.getElementById("adminOpenCheckIn").hidden = view !== "overview";
+  if (view === "points") renderPointsWorkspace();
+}
+
+document.querySelectorAll("[data-admin-view]").forEach((button) => button.addEventListener("click", () => setAdminView(button.dataset.adminView)));
+
+function renderPointsWorkspace() {
+  const picker = document.getElementById("activityLearnerPicker");
+  if (picker) {
+    const selectedIds = new Set([...picker.querySelectorAll("input:checked")].map((box) => box.value));
+    picker.innerHTML = adminRosterRows.length ? adminRosterRows.map((member) => `<label><input type="checkbox" value="${safeText(member.uid)}" ${selectedIds.has(member.uid) ? "checked" : ""} /><span><b>${safeText(member.name)}</b><small>${safeText(member.email)}</small></span></label>`).join("") : "<p>No learner accounts yet.</p>";
+  }
+  const ledger = document.getElementById("pointsLedgerBody");
+  if (!ledger) return;
+  const memberByUid = new Map(adminRosterRows.map((member) => [member.uid, member]));
+  const records = [...adminAllActivity].sort((a, b) => activityMillis(b) - activityMillis(a));
+  ledger.innerHTML = records.length ? records.map((record) => {
+    const member = memberByUid.get(record.uid);
+    return `<tr>
+      <td><b>${safeText(member?.name || record.name || record.email || "Academy member")}</b><small>${safeText(record.email || member?.email || "")}</small></td>
+      <td>${safeText(record.activityTitle || record.sessionTitle || "Participation activity")}</td>
+      <td>${formatRosterDate(activityMillis(record))}</td>
+      <td><strong class="ledger-points">${Number(record.points || 0) >= 0 ? "+" : ""}${Number(record.points || 0)}</strong></td>
+      <td><div class="ledger-actions"><button data-edit-record="${safeText(record.id || "")}">Edit</button><button class="danger" data-delete-record="${safeText(record.id || "")}">Delete</button></div></td>
+    </tr>`;
+  }).join("") : '<tr><td colspan="5" class="member-roster-empty">No point records yet.</td></tr>';
+}
+
+document.getElementById("selectAllLearners").addEventListener("click", () => {
+  const boxes = [...document.querySelectorAll("#activityLearnerPicker input[type=checkbox]")];
+  const shouldSelect = boxes.some((box) => !box.checked);
+  boxes.forEach((box) => { box.checked = shouldSelect; });
+  document.getElementById("selectAllLearners").textContent = shouldSelect ? "Clear all" : "Select all";
+});
+
+document.getElementById("awardActivityPoints").addEventListener("click", async () => {
+  const title = document.getElementById("activityTitleInput").value.trim();
+  const points = Number(document.getElementById("activityPointsInput").value);
+  const date = document.getElementById("activityDateInput").value;
+  const selectedIds = [...document.querySelectorAll("#activityLearnerPicker input:checked")].map((box) => box.value);
+  const status = document.getElementById("activityAwardStatus");
+  if (!title || !Number.isFinite(points) || !date || !selectedIds.length) {
+    status.textContent = "Add an activity name, points, date, and at least one learner.";
+    return;
+  }
+  if (!currentFirebaseUser || !firebaseDb) {
+    status.textContent = `Preview: ${points} points would be awarded to ${selectedIds.length} learner${selectedIds.length === 1 ? "" : "s"}.`;
+    return;
+  }
+  const button = document.getElementById("awardActivityPoints");
+  button.disabled = true;
+  button.textContent = "Saving…";
+  status.textContent = "";
+  try {
+    const batch = firebaseDb.batch();
+    const occurredAt = firebase.firestore.Timestamp.fromDate(new Date(`${date}T20:00:00Z`));
+    selectedIds.forEach((uid) => {
+      const member = adminRosterRows.find((item) => item.uid === uid);
+      const recordRef = firebaseDb.collection("attendance").doc(`activity_${Date.now()}_${uid}`);
+      batch.set(recordRef, { uid, email: member?.email || "", name: member?.name || "Academy member", activityTitle: title, points, recordType: "activity", occurredAt, createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentFirebaseUser.email || "admin" });
+    });
+    await batch.commit();
+    status.textContent = `Saved for ${selectedIds.length} learner${selectedIds.length === 1 ? "" : "s"}.`;
+    document.getElementById("activityTitleInput").value = "";
+    document.querySelectorAll("#activityLearnerPicker input:checked").forEach((box) => { box.checked = false; });
+    showToast("Participation points added.");
+  } catch (error) {
+    console.error("Could not award activity points", error);
+    status.textContent = "Could not save these points. Try again.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Award points";
+  }
+});
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [], cell = "", quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (char === '"' && quoted && text[i + 1] === '"') { cell += '"'; i += 1; }
+    else if (char === '"') quoted = !quoted;
+    else if (char === "," && !quoted) { row.push(cell.trim()); cell = ""; }
+    else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && text[i + 1] === "\n") i += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = []; cell = "";
+    } else cell += char;
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function findCsvColumn(headers, names) {
+  return headers.findIndex((header) => names.includes(header.toLowerCase().replace(/[^a-z]/g, "")));
+}
+
+document.getElementById("pointsCsvInput").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  pendingCsvRows = [];
+  document.getElementById("importCsvPoints").disabled = true;
+  if (!file) return;
+  document.getElementById("pointsCsvFileName").textContent = file.name;
+  const rows = parseCsv(await file.text());
+  const headers = rows.shift() || [];
+  const emailIndex = findCsvColumn(headers, ["email", "emailaddress", "uscemail"]);
+  const activityIndex = findCsvColumn(headers, ["activity", "activityname", "event", "title"]);
+  const pointsIndex = findCsvColumn(headers, ["points", "point"]);
+  const dateIndex = findCsvColumn(headers, ["date", "timestamp", "activitydate"]);
+  const memberByEmail = new Map(adminRosterRows.map((member) => [member.email.toLowerCase(), member]));
+  if ([emailIndex, activityIndex, pointsIndex].some((index) => index < 0)) {
+    document.getElementById("pointsCsvPreview").innerHTML = "<p>Could not find the required email, activity, and points columns.</p>";
+    return;
+  }
+  pendingCsvRows = rows.map((values, index) => {
+    const email = String(values[emailIndex] || "").toLowerCase();
+    const member = memberByEmail.get(email);
+    return { row: index + 2, email, member, activity: values[activityIndex] || "Imported activity", points: Number(values[pointsIndex]), date: dateIndex >= 0 ? values[dateIndex] : "" };
+  }).filter((row) => row.email && Number.isFinite(row.points));
+  const matched = pendingCsvRows.filter((row) => row.member);
+  const unmatched = pendingCsvRows.filter((row) => !row.member);
+  document.getElementById("pointsCsvPreview").innerHTML = `<div><strong>${matched.length}</strong><span>matched</span></div><div class="unmatched"><strong>${unmatched.length}</strong><span>unmatched</span></div>${unmatched.length ? `<p>Not found: ${unmatched.slice(0, 4).map((row) => safeText(row.email)).join(", ")}${unmatched.length > 4 ? "…" : ""}</p>` : ""}`;
+  document.getElementById("importCsvPoints").disabled = !matched.length;
+});
+
+function stableRecordId(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  return Math.abs(hash).toString(36);
+}
+
+document.getElementById("importCsvPoints").addEventListener("click", async () => {
+  const matched = pendingCsvRows.filter((row) => row.member);
+  if (!matched.length || !currentFirebaseUser || !firebaseDb) return;
+  const button = document.getElementById("importCsvPoints");
+  button.disabled = true;
+  button.textContent = "Importing…";
+  try {
+    const batch = firebaseDb.batch();
+    matched.forEach((row) => {
+      const parsedDate = row.date && /^\d{4}-\d{2}-\d{2}$/.test(row.date) ? new Date(`${row.date}T20:00:00Z`) : row.date ? new Date(row.date) : new Date();
+      const occurredAt = firebase.firestore.Timestamp.fromDate(Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate);
+      const id = `import_${stableRecordId(`${row.email}|${row.activity}|${row.date}`)}_${row.member.uid}`;
+      batch.set(firebaseDb.collection("attendance").doc(id), { uid: row.member.uid, email: row.member.email, name: row.member.name, activityTitle: row.activity, points: row.points, recordType: "import", occurredAt, createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentFirebaseUser.email || "admin" }, { merge: true });
+    });
+    await batch.commit();
+    showToast(`${matched.length} point record${matched.length === 1 ? "" : "s"} imported.`);
+    pendingCsvRows = [];
+    document.getElementById("pointsCsvInput").value = "";
+    document.getElementById("pointsCsvFileName").textContent = "No file selected";
+    document.getElementById("pointsCsvPreview").innerHTML = "<p>Import complete.</p>";
+  } catch (error) {
+    console.error("CSV import failed", error);
+    showToast("CSV import failed. Check the file and try again.");
+  } finally {
+    button.disabled = true;
+    button.textContent = "Import matched rows";
+  }
+});
+
+document.getElementById("pointsLedgerBody").addEventListener("click", async (event) => {
+  const editButton = event.target.closest("[data-edit-record]");
+  const deleteButton = event.target.closest("[data-delete-record]");
+  const recordId = editButton?.dataset.editRecord || deleteButton?.dataset.deleteRecord;
+  if (!recordId || !currentFirebaseUser || !firebaseDb) return;
+  const record = adminAllActivity.find((item) => item.id === recordId);
+  if (!record) return;
+  if (editButton) {
+    const nextPoints = Number(window.prompt("Set the point value for this record:", String(Number(record.points || 0))));
+    if (!Number.isFinite(nextPoints)) return;
+    try {
+      await firebaseDb.collection("attendance").doc(recordId).update({ points: nextPoints, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: currentFirebaseUser.email || "admin" });
+      showToast("Point record updated.");
+    } catch (error) {
+      console.error("Could not update point record", error);
+      showToast("Could not update this record.");
+    }
+  }
+  if (deleteButton && window.confirm(`Delete “${record.activityTitle || record.sessionTitle || "this record"}” for ${record.name || record.email}? This cannot be undone.`)) {
+    try {
+      await firebaseDb.collection("attendance").doc(recordId).delete();
+      showToast("Point record deleted.");
+    } catch (error) {
+      console.error("Could not delete point record", error);
+      showToast("Could not delete this record.");
+    }
+  }
+});
 
 function startLiveData(role, user) {
   unsubscribeAttendance?.();
@@ -697,7 +905,7 @@ function startLiveData(role, user) {
       showToast("Member roster could not load. Confirm Firestore rules are deployed.");
     });
     unsubscribeAllAttendance = firebaseDb.collection("attendance").onSnapshot((snapshot) => {
-      adminAllActivity = snapshot.docs.map((item) => item.data());
+      adminAllActivity = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
       renderMemberRoster();
     }, (error) => {
       console.error("Could not load learner activity", error);
@@ -1081,7 +1289,12 @@ function showToast(message) {
 
 renderSessionStates();
 renderResources();
-const localPreviewRole = location.protocol === "file:" ? new URLSearchParams(location.search).get("preview") : null;
+const previewParams = new URLSearchParams(location.search);
+const localPreviewRole = location.protocol === "file:" ? previewParams.get("preview") : null;
+const localAdminView = location.protocol === "file:" ? previewParams.get("adminView") : null;
+const academyDateParts = new Intl.DateTimeFormat("en-US", { timeZone: ACADEMY_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+const academyDate = Object.fromEntries(academyDateParts.map((part) => [part.type, part.value]));
+document.getElementById("activityDateInput").value = `${academyDate.year}-${academyDate.month}-${academyDate.day}`;
 if (["student", "admin"].includes(localPreviewRole)) localStorage.setItem("neurotech-auth-demo", localPreviewRole);
 const initialRoute = location.hash.slice(1);
 const validRoutes = ["home", "learn", "session", "library", "me", "admin"];
@@ -1089,6 +1302,7 @@ const savedRole = localStorage.getItem("neurotech-auth-demo");
 if (["student", "admin"].includes(savedRole)) {
   const destination = validRoutes.includes(initialRoute) ? initialRoute : savedRole === "admin" ? "admin" : "home";
   completeSignIn(savedRole, destination, null, true);
+  if (savedRole === "admin" && ["overview", "roster", "points"].includes(localAdminView)) setAdminView(localAdminView);
 } else {
   navigate("home");
   initializeFirebaseAuth(validRoutes.includes(initialRoute) ? initialRoute : "home");

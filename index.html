@@ -74,7 +74,7 @@
       </button>
 
       <div class="profile-menu" id="profileMenu" role="menu">
-        <button data-route="me" role="menuitem">View my progress</button>
+        <button id="profileProgressButton" data-route="me" role="menuitem">View my progress</button>
         <button id="contactTeamButton" role="menuitem">Contact the team</button>
         <button id="adminToggle" role="menuitem">Open admin dashboard</button>
         <button id="signOutButton" role="menuitem">Sign out</button>
@@ -395,10 +395,15 @@
 
       <section class="page" id="admin-page" aria-labelledby="admin-title">
         <div class="admin-header">
-          <div><p class="kicker">ADMIN VIEW</p><h1 id="admin-title">Academy dashboard</h1><p>Manage sessions and check-in.</p></div>
+          <div><p class="kicker">ADMIN OPERATIONS</p><h1 id="admin-title">Academy dashboard</h1><p>Run sessions, support learners, and manage participation records.</p></div>
           <button class="button primary" id="adminOpenCheckIn">Open check-in</button>
         </div>
-        <section class="session-manager" aria-labelledby="sessionManagerTitle">
+        <nav class="admin-view-tabs" aria-label="Admin sections">
+          <button class="active" data-admin-view="overview"><span>01</span>Overview</button>
+          <button data-admin-view="roster"><span>02</span>Roster</button>
+          <button data-admin-view="points"><span>03</span>Points &amp; activities</button>
+        </nav>
+        <section class="session-manager" data-admin-panel="overview" aria-labelledby="sessionManagerTitle">
           <div class="manager-heading">
             <div><p class="panel-label">SESSION CONTROL</p><h2 id="sessionManagerTitle">Publishing desk</h2></div>
             <p>Move each session through one clear lifecycle. Changes update the learner home, syllabus, and calendar together.</p>
@@ -429,13 +434,13 @@
           </div>
           <p class="manager-status" id="sessionManagerStatus" role="status"><i></i><span>Session 02 is currently shown as the next Academy meeting.</span></p>
         </section>
-        <div class="admin-metrics">
+        <div class="admin-metrics" data-admin-panel="overview">
           <article><small>REGISTERED MEMBERS</small><strong id="adminMemberCount">0</strong><p>Members appear after first sign-in</p></article>
           <article><small>AVG. ATTENDANCE</small><strong id="adminAverageAttendance">—</strong><p>Across published sessions</p></article>
           <article><small>CHECKPOINT RATE</small><strong>—</strong><p>Optional work is not open yet</p></article>
           <article><small>NEEDS FOLLOW-UP</small><strong id="adminFollowUpCount">0</strong><p>Members with no activity yet</p></article>
         </div>
-        <section class="member-roster-panel" aria-labelledby="memberRosterTitle">
+        <section class="member-roster-panel" data-admin-panel="roster" aria-labelledby="memberRosterTitle" hidden>
           <div class="member-roster-heading">
             <div><p class="panel-label">LEARNER ROSTER</p><h2 id="memberRosterTitle">Student progress</h2><p>Private participation history for Academy admins.</p></div>
             <div class="member-roster-tools">
@@ -451,7 +456,32 @@
           </div>
           <p class="member-roster-footnote">This is a support view, not a public ranking. “No activity” means the member has signed in but has no recorded check-in or imported activity.</p>
         </section>
-        <div class="admin-main">
+        <section class="points-admin-workspace" data-admin-panel="points" aria-labelledby="pointsWorkspaceTitle" hidden>
+          <div class="points-workspace-heading"><div><p class="panel-label">POINTS &amp; ACTIVITIES</p><h2 id="pointsWorkspaceTitle">Participation ledger</h2><p>Create activities, award points, or import a Google Sheets CSV.</p></div><span>ADMIN ONLY</span></div>
+          <div class="points-workspace-grid">
+            <article class="activity-builder">
+              <div class="workspace-card-heading"><span>01</span><div><h3>Create an activity</h3><p>Award the same activity to one or more learners.</p></div></div>
+              <label>Activity name<input id="activityTitleInput" type="text" placeholder="e.g. Speaker event · Neural Interfaces" /></label>
+              <div class="activity-fields"><label>Points<input id="activityPointsInput" type="number" min="-20" max="50" step="1" value="2" /></label><label>Date<input id="activityDateInput" type="date" /></label></div>
+              <div class="learner-picker-heading"><span>Select learners</span><button id="selectAllLearners" type="button">Select all</button></div>
+              <div class="learner-picker" id="activityLearnerPicker"><p>No learner accounts yet.</p></div>
+              <button class="button primary wide" id="awardActivityPoints" type="button">Award points</button>
+              <p class="workspace-status" id="activityAwardStatus" role="status"></p>
+            </article>
+            <article class="csv-import-card">
+              <div class="workspace-card-heading"><span>02</span><div><h3>Import a spreadsheet</h3><p>Download Google Sheets as CSV, then upload it here.</p></div></div>
+              <div class="csv-format"><small>REQUIRED COLUMNS</small><code>email, activity, points, date</code><p>Email matches the learner’s Google account. Date uses YYYY-MM-DD.</p></div>
+              <label class="csv-drop" for="pointsCsvInput"><span>⇧</span><b>Choose CSV file</b><small id="pointsCsvFileName">No file selected</small><input id="pointsCsvInput" type="file" accept=".csv,text/csv" /></label>
+              <div class="csv-preview" id="pointsCsvPreview"><p>Matched and unmatched rows will appear here before anything is saved.</p></div>
+              <button class="button dark wide" id="importCsvPoints" type="button" disabled>Import matched rows</button>
+            </article>
+            <article class="points-ledger-card">
+              <div class="workspace-card-heading"><span>03</span><div><h3>All point records</h3><p>Edit mistakes or remove an incorrect check-in.</p></div></div>
+              <div class="points-ledger-wrap"><table class="points-ledger-table"><thead><tr><th>Learner</th><th>Activity</th><th>Date</th><th>Points</th><th>Actions</th></tr></thead><tbody id="pointsLedgerBody"><tr><td colspan="5">No records yet.</td></tr></tbody></table></div>
+            </article>
+          </div>
+        </section>
+        <div class="admin-main" data-admin-panel="overview">
           <article class="roster-card">
             <div class="section-heading"><div><span class="section-number">01</span><h2>Live attendance</h2></div><span class="live-pill">● LIVE</span></div>
             <div class="attendance-count"><strong id="attendanceNumber">0</strong><span>students checked in</span></div>

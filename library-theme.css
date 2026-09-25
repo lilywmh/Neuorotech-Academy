@@ -269,6 +269,13 @@ body::before { opacity: .28; background-size: 56px 56px; }
 .manager-status.saved i { background: var(--success); }
 .manager-status.error { color: #963a37; background: #fae5e3; }
 .manager-status.error i { background: var(--orange); }
+.admin-mode .desktop-nav, .admin-mode .mobile-nav { display: none; }
+.admin-view-tabs { display: flex; gap: 5px; margin: 24px 0 4px; padding: 5px; border: 1px solid rgba(255,255,255,.88); border-radius: 14px; background: rgba(255,255,255,.62); box-shadow: var(--shadow-soft), inset 0 1px 0 white; }
+.admin-view-tabs button { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 9px; flex: 1; padding: 0 18px; border: 0; border-radius: 10px; color: #607681; background: transparent; font-size: 12px; font-weight: 900; cursor: pointer; }
+.admin-view-tabs button span { color: #8fa1aa; font-family: var(--serif); font-size: 15px; }
+.admin-view-tabs button:hover { color: var(--ink); background: #edf5f7; }
+.admin-view-tabs button.active { color: white; background: var(--ink); box-shadow: 0 6px 15px rgba(20,53,70,.16); }
+.admin-view-tabs button.active span { color: var(--mint); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .member-roster-panel {
   margin: 30px 0;
@@ -330,6 +337,60 @@ body::before { opacity: .28; background-size: 56px 56px; }
 #memberDetailActivity b { font-size: 12px; }
 #memberDetailActivity small, #memberDetailActivity p { margin: 0; color: #74868e; font-size: 10px; }
 #memberDetailActivity strong { color: var(--success); }
+.points-admin-workspace { min-width: 0; margin: 30px 0; }
+.points-workspace-heading { display: flex; align-items: end; justify-content: space-between; gap: 30px; padding: 0 2px 22px; border-bottom: 1px solid var(--line); }
+.points-workspace-heading h2 { margin: 5px 0 3px; font-family: var(--serif); font-size: 42px; line-height: 1.05; }
+.points-workspace-heading p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.points-workspace-heading > span { padding: 7px 10px; border-radius: 99px; color: #2e6c45; background: #dff0e5; font-size: 9px; font-weight: 900; letter-spacing: .1em; }
+.points-workspace-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 20px; }
+.activity-builder, .csv-import-card, .points-ledger-card { min-width: 0; padding: 25px; border: 1px solid rgba(255,255,255,.88); border-radius: 20px; background: rgba(255,255,255,.72); box-shadow: var(--shadow-soft), inset 0 1px 0 white; }
+.points-ledger-card { grid-column: 1 / -1; }
+.workspace-card-heading { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 22px; }
+.workspace-card-heading > div { min-width: 0; }
+.workspace-card-heading > span { width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--ink); font-family: var(--serif); font-size: 13px; }
+.workspace-card-heading h3 { margin: 0 0 3px; font-family: var(--serif); font-size: 25px; }
+.workspace-card-heading p { margin: 0; color: var(--ink-soft); font-size: 12px; }
+.activity-builder > label, .activity-fields label { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; color: #637781; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.activity-builder input { width: 100%; min-width: 0; height: 43px; padding: 0 12px; border: 1px solid #cad9df; border-radius: 9px; color: var(--ink); background: white; font-size: 13px; text-transform: none; }
+.activity-fields { display: grid; grid-template-columns: 120px 1fr; gap: 10px; }
+.learner-picker-heading { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 8px; color: #637781; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.learner-picker-heading button { border: 0; color: var(--acid); background: transparent; font-size: 10px; font-weight: 900; cursor: pointer; }
+.learner-picker { max-height: 190px; overflow-y: auto; margin-bottom: 17px; border: 1px solid #d4e1e6; border-radius: 11px; background: #f8fbfb; }
+.learner-picker label { min-height: 50px; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-top: 1px solid #e2eaed; cursor: pointer; }
+.learner-picker label:first-child { border-top: 0; }
+.learner-picker input { width: 17px; height: 17px; flex: 0 0 17px; accent-color: var(--acid); }
+.learner-picker label > span { display: flex; flex-direction: column; gap: 2px; }
+.learner-picker b { font-size: 12px; }
+.learner-picker small { color: #758891; font-size: 10px; }
+.learner-picker > p { margin: 0; padding: 24px; color: #758891; font-size: 11px; text-align: center; }
+.workspace-status { min-height: 18px; margin: 10px 0 0; color: #55707c; font-size: 11px; }
+.csv-format { padding: 15px; border-radius: 11px; background: #edf5f7; }
+.csv-format small { display: block; color: #71858f; font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.csv-format code { display: block; margin: 7px 0; color: var(--ink); font-size: 13px; }
+.csv-format p { margin: 0; color: #687d87; font-size: 10px; }
+.csv-drop { min-height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; margin: 16px 0; border: 1px dashed #9fb7c1; border-radius: 12px; color: var(--ink); background: #fafcfc; cursor: pointer; }
+.csv-drop:hover { border-color: var(--acid); background: #f0f8fb; }
+.csv-drop > span { color: var(--acid); font-size: 27px; }
+.csv-drop b { font-size: 12px; }
+.csv-drop small { color: #758891; font-size: 10px; }
+.csv-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.csv-preview { min-height: 70px; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+.csv-preview > div { min-width: 95px; display: flex; flex-direction: column; padding: 11px; border-radius: 10px; color: #2f6f47; background: #e4f2e8; }
+.csv-preview > div.unmatched { color: #8b6423; background: #f7ecd6; }
+.csv-preview strong { font-family: var(--serif); font-size: 23px; }
+.csv-preview span, .csv-preview p { color: inherit; font-size: 9px; }
+.csv-preview > p { margin: 0; color: #71858f; line-height: 1.45; }
+.points-ledger-wrap { overflow-x: auto; }
+.points-ledger-table { width: 100%; border-collapse: collapse; }
+.points-ledger-table th { padding: 11px 12px; color: #748994; background: #eef5f7; font-size: 9px; letter-spacing: .09em; text-align: left; text-transform: uppercase; }
+.points-ledger-table td { padding: 12px; border-top: 1px solid #e0e9ec; font-size: 11px; }
+.points-ledger-table td:first-child { display: flex; flex-direction: column; gap: 2px; }
+.points-ledger-table td:first-child small { color: #758891; font-size: 9px; }
+.ledger-points { color: var(--success); font-size: 14px; }
+.ledger-actions { display: flex; gap: 5px; }
+.ledger-actions button { min-height: 31px; padding: 0 9px; border: 1px solid #c6d7de; border-radius: 7px; color: var(--acid); background: white; font-size: 9px; font-weight: 900; cursor: pointer; }
+.ledger-actions button.danger { color: var(--orange); }
+.ledger-actions button:hover { color: white; border-color: var(--ink); background: var(--ink); }
 .admin-metrics strong { font-family: var(--serif); }
 
 .session-detail-copy h1, .question-block h2, .content-section-heading h2, .outcome-list h3, .evidence-grid h3, .checkpoint-card h3, .extension-card h2, .next-session-card strong { font-family: var(--serif); }
@@ -347,6 +408,7 @@ body::before { opacity: .28; background-size: 56px 56px; }
 }
 
 @media (max-width: 700px) {
+  .admin-mode { padding-bottom: 0; }
   body { font-size: 16px; }
   .topbar { height: 70px; }
   .brand-logo { width: 43px; height: 43px; flex-basis: 43px; }
@@ -390,12 +452,20 @@ body::before { opacity: .28; background-size: 56px 56px; }
   .manager-control-row { align-items: flex-start; flex-direction: column; }
   .manager-actions { width: 100%; justify-content: stretch; }
   .manager-actions button { flex: 1 1 calc(50% - 6px); }
+  .admin-view-tabs { position: sticky; top: 70px; z-index: 10; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .admin-view-tabs button { min-width: 0; padding: 0 5px; gap: 5px; font-size: 9px; white-space: nowrap; }
   .member-roster-heading { align-items: stretch; flex-direction: column; gap: 18px; padding: 22px; }
   .member-roster-tools { flex-direction: column; }
   .member-search, .member-roster-tools select { width: 100%; min-width: 0; }
   .member-roster-table { min-width: 850px; }
   .member-roster-footnote { padding: 13px 22px; }
   .member-detail-dialog { padding: 25px 20px; }
+  .points-workspace-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .points-workspace-heading h2 { font-size: 36px; overflow-wrap: anywhere; }
+  .points-workspace-grid { grid-template-columns: 1fr; }
+  .points-ledger-card { grid-column: auto; }
+  .activity-builder, .csv-import-card, .points-ledger-card { padding: 20px; }
+  .points-ledger-table { min-width: 720px; }
   .session-row { grid-template-columns: 42px 1fr 70px; }
 }
 
