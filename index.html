@@ -6,6 +6,9 @@
     <meta name="theme-color" content="#428bca" />
     <meta name="description" content="Neurotech@USC Academy learning portal" />
     <title>Neurotech@USC Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Syne:wght@500;600;700&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="auth-locked">
@@ -175,7 +178,10 @@
             <article class="reach-card social">
               <span class="contact-symbol">◎</span><small>FOLLOW NEUROTECH@USC</small><h3>Find us online</h3>
               <p>Updates, events, speakers, projects, and what the Neurotech@USC community is building.</p>
-              <div class="social-actions"><a href="https://www.instagram.com/neurotechusc/" target="_blank" rel="noreferrer">Instagram <b>@neurotechusc</b> ↗</a><a href="https://www.linkedin.com/company/neurotech-usc" target="_blank" rel="noreferrer">LinkedIn <b>Neurotech USC</b> ↗</a></div>
+              <div class="social-actions">
+                <a href="https://www.instagram.com/neurotechusc/" target="_blank" rel="noreferrer"><span class="social-brand instagram" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4.2" /><circle class="social-dot" cx="17.4" cy="6.8" r="1" /></svg></span><span><small>INSTAGRAM</small><b>@neurotechusc</b></span><i>↗</i></a>
+                <a href="https://www.linkedin.com/company/neurotech-usc" target="_blank" rel="noreferrer"><span class="social-brand linkedin" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.1 20.45H3.54V9H7.1v11.45Z" /></svg></span><span><small>LINKEDIN</small><b>Neurotech USC</b></span><i>↗</i></a>
+              </div>
             </article>
             <article class="reach-card email">
               <span class="contact-symbol">@</span><small>NEUROTECH EMAIL</small><h3>Send us an email</h3>
@@ -366,7 +372,7 @@
           <article class="badge-panel">
             <p class="panel-label">CURRENT BADGE</p>
             <div class="badge-showcase">
-              <div class="badge-emblem" id="badgeEmblem"><img src="assets/neurotech-usc-logo.png" alt="" /><span id="badgeTier">STARTER</span></div>
+              <div class="badge-emblem" id="badgeEmblem"><i class="badge-orbit orbit-one"></i><i class="badge-orbit orbit-two"></i><i class="badge-node node-one"></i><i class="badge-node node-two"></i><img src="assets/neurotech-usc-logo.png" alt="" /><span id="badgeTier">STARTER</span></div>
               <div class="badge-copy"><small>YOUR SIGNAL LEVEL</small><h2 id="badgeName">Signal Detected</h2><p id="badgeMessage">Your first Neurotech@USC activity starts the signal.</p></div>
             </div>
             <div class="badge-path" aria-label="Badge path">
@@ -379,7 +385,8 @@
             <p class="readiness-note">Only you and Academy admins can see your points. Badges celebrate participation; they do not guarantee project placement.</p>
           </article>
           <article class="points-panel">
-            <p class="panel-label">PARTICIPATION</p>
+            <p class="panel-label">SIGNAL BANK</p>
+            <div class="points-heading"><span>Participation energy</span><small>YOUR PRIVATE TOTAL</small></div>
             <div class="big-number"><b id="mePoints">00</b> <span>points</span></div>
             <div class="participation-mini"><span><b id="meSessionCount">0</b><small>sessions</small></span><span><b id="meActivityCount">0</b><small>activities</small></span></div>
             <ul id="pointsHistory">
