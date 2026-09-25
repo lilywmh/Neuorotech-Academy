@@ -25,7 +25,10 @@ let unsubscribeRoster = null;
 let unsubscribeSession = null;
 let hasCheckedIn = false;
 let liveAttendanceCount = 0;
-const CHECK_IN_CODE = "092426";
+let activeCheckInCode = "";
+let learnerRecords = [];
+let adminAttendanceRecords = [];
+const PREVIEW_CHECK_IN_CODE = "092426";
 const SESSION_ID = "session01";
 
 function navigate(route) {
@@ -208,20 +211,67 @@ document.querySelectorAll("[data-resource-filter]").forEach((button) => button.a
 }));
 document.getElementById("resourceSearch").addEventListener("input", renderResources);
 
-function renderLearnerProgress(checkedIn) {
-  const count = checkedIn ? 1 : 0;
-  const points = checkedIn ? 2 : 0;
-  document.getElementById("homeSessionCount").textContent = String(count);
+function renderLearnerProgress(input) {
+  const records = Array.isArray(input)
+    ? input
+    : input
+      ? [{ sessionId: SESSION_ID, sessionTitle: "Fall 2026 Intro Meeting", points: 2 }]
+      : [];
+  learnerRecords = records;
+  hasCheckedIn = records.some((record) => record.sessionId === SESSION_ID);
+  const points = records.reduce((total, record) => total + Number(record.points || 0), 0);
+  const sessionCount = new Set(records.filter((record) => String(record.sessionId || "").startsWith("session")).map((record) => record.sessionId)).size;
+  const completedFraction = Math.min(sessionCount / 2, 1);
+
+  document.getElementById("homeSessionCount").textContent = String(sessionCount);
   document.getElementById("homePoints").textContent = String(points).padStart(2, "0");
-  document.getElementById("meAttendanceText").textContent = checkedIn ? "1 of 1 sessions" : "0 of 1 sessions";
-  document.getElementById("meAttendanceBar").style.width = checkedIn ? "100%" : "0%";
   document.getElementById("mePoints").textContent = String(points).padStart(2, "0");
-  document.querySelector(".ring-value").style.strokeDashoffset = checkedIn ? "176" : "352";
-  document.getElementById("pointsHistory").innerHTML = checkedIn
-    ? '<li><span>Session 01 attendance</span><strong>+2</strong></li>'
-    : '<li><span>Check in to Session 01 today</span><strong>+2</strong></li>';
-  document.getElementById("openCheckIn").textContent = checkedIn ? "Checked in ✓" : "Check in to session";
-  document.getElementById("sessionCheckIn").textContent = checkedIn ? "Checked in ✓" : "Check in";
+  document.getElementById("meSessionCount").textContent = String(sessionCount);
+  document.getElementById("meActivityCount").textContent = String(records.length);
+  document.querySelector(".ring-value").style.strokeDashoffset = String(352 * (1 - completedFraction));
+
+  const sortedRecords = [...records].sort((a, b) => {
+    const aTime = a.checkedInAt?.toMillis?.() || a.occurredAt?.toMillis?.() || 0;
+    const bTime = b.checkedInAt?.toMillis?.() || b.occurredAt?.toMillis?.() || 0;
+    return bTime - aTime;
+  });
+  document.getElementById("pointsHistory").innerHTML = sortedRecords.length
+    ? sortedRecords.map((record) => `<li><span>${safeText(record.activityTitle || record.sessionTitle || "Participation activity")}</span><strong>+${Number(record.points || 0)}</strong></li>`).join("")
+    : '<li><span>Your first activity will appear here.</span><strong>—</strong></li>';
+  document.getElementById("openCheckIn").textContent = hasCheckedIn ? "Checked in ✓" : "Check in to session";
+  document.getElementById("sessionCheckIn").textContent = hasCheckedIn ? "Checked in ✓" : "Check in";
+  renderBadge(points);
+}
+
+function renderBadge(points) {
+  const badges = [
+    { min: 0, next: 4, tier: "STARTER", name: "Signal Detected", message: "Your first Neurotech@USC activities are bringing the signal online.", className: "tier-starter" },
+    { min: 4, next: 10, tier: "BRONZE", name: "Signal Scout", message: "You are showing up, asking questions, and learning how to spot meaningful signals.", className: "tier-bronze" },
+    { min: 10, next: 20, tier: "SILVER", name: "Synapse Builder", message: "Your steady participation is helping ideas and people connect across the Academy.", className: "tier-silver" },
+    { min: 20, next: null, tier: "GOLD", name: "BCI Pioneer", message: "You have built a strong participation trail across Neurotech@USC activities.", className: "tier-gold" }
+  ];
+  const index = points >= 20 ? 3 : points >= 10 ? 2 : points >= 4 ? 1 : 0;
+  const badge = badges[index];
+  const emblem = document.getElementById("badgeEmblem");
+  emblem.classList.remove("tier-starter", "tier-bronze", "tier-silver", "tier-gold");
+  emblem.classList.add(badge.className);
+  document.getElementById("badgeTier").textContent = badge.tier;
+  document.getElementById("badgeName").textContent = badge.name;
+  document.getElementById("badgeMessage").textContent = badge.message;
+  document.querySelectorAll("[data-badge-step]").forEach((step) => {
+    step.classList.toggle("active", Number(step.dataset.badgeStep) <= index);
+  });
+  if (badge.next === null) {
+    document.getElementById("badgeNextText").textContent = "Gold signal reached. Keep exploring, contributing, and helping others.";
+    document.getElementById("badgeProgressBar").style.width = "100%";
+    return;
+  }
+  const nextBadge = badges[index + 1];
+  const remaining = badge.next - points;
+  const range = badge.next - badge.min;
+  const progress = Math.max(0, Math.min(100, ((points - badge.min) / range) * 100));
+  document.getElementById("badgeNextText").textContent = `Earn ${remaining} more point${remaining === 1 ? "" : "s"} to reach ${nextBadge.name}.`;
+  document.getElementById("badgeProgressBar").style.width = `${progress}%`;
 }
 
 function safeText(value = "") {
@@ -231,6 +281,7 @@ function safeText(value = "") {
 }
 
 function renderRoster(records) {
+  adminAttendanceRecords = records;
   liveAttendanceCount = records.length;
   document.getElementById("attendanceNumber").textContent = String(liveAttendanceCount);
   document.getElementById("modalAttendanceNumber").textContent = String(liveAttendanceCount);
@@ -257,10 +308,9 @@ function startLiveData(role, user) {
   unsubscribeSession = null;
 
   if (role === "student") {
-    const attendanceRef = firebaseDb.collection("attendance").doc(`${SESSION_ID}_${user.uid}`);
-    unsubscribeAttendance = attendanceRef.onSnapshot((snapshot) => {
-      hasCheckedIn = snapshot.exists;
-      renderLearnerProgress(hasCheckedIn);
+    const attendanceQuery = firebaseDb.collection("attendance").where("uid", "==", user.uid);
+    unsubscribeAttendance = attendanceQuery.onSnapshot((snapshot) => {
+      renderLearnerProgress(snapshot.docs.map((item) => item.data()));
     }, (error) => {
       console.error("Could not load attendance", error);
       showToast("Your progress could not load. Refresh and try again.");
@@ -283,6 +333,8 @@ function startLiveData(role, user) {
     if (role !== "admin") return;
     const data = snapshot.data();
     const isOpen = Boolean(data?.checkInOpen && (data.expiresAt?.toMillis?.() || 0) > Date.now());
+    if (isOpen && data.code) setAdminCheckInCode(data.code);
+    if (!isOpen) activeCheckInCode = "";
     document.getElementById("adminOpenCheckIn").textContent = isOpen ? "Show check-in code" : "Open check-in";
   });
 }
@@ -343,14 +395,14 @@ inputs.forEach((input, index) => {
 });
 
 document.getElementById("fillDemoCode").addEventListener("click", () => {
-  "092426".split("").forEach((digit, index) => { inputs[index].value = digit; });
+  PREVIEW_CHECK_IN_CODE.split("").forEach((digit, index) => { inputs[index].value = digit; });
   submitCode.disabled = false;
 });
 
 submitCode.addEventListener("click", async () => {
   const code = inputs.map((input) => input.value).join("");
   if (!currentFirebaseUser || !firebaseDb) {
-    if (code !== CHECK_IN_CODE) { setCheckInStatus(`That code isn’t active. Try ${CHECK_IN_CODE} in preview.`); return; }
+    if (code !== PREVIEW_CHECK_IN_CODE) { setCheckInStatus(`That code isn’t active. Try ${PREVIEW_CHECK_IN_CODE} in preview.`); return; }
     hasCheckedIn = true;
     localStorage.setItem("neurotech-checkin", SESSION_ID);
     renderLearnerProgress(true);
@@ -367,7 +419,7 @@ submitCode.addEventListener("click", async () => {
 
     if (attendanceSnapshot.exists) {
       hasCheckedIn = true;
-      renderLearnerProgress(true);
+      renderLearnerProgress(learnerRecords.length ? learnerRecords : [attendanceSnapshot.data()]);
       setCheckInSuccess();
       showToast("You already checked in — no duplicate was added.");
       return;
@@ -395,7 +447,8 @@ submitCode.addEventListener("click", async () => {
       checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     hasCheckedIn = true;
-    renderLearnerProgress(true);
+    document.getElementById("openCheckIn").textContent = "Checked in ✓";
+    document.getElementById("sessionCheckIn").textContent = "Checked in ✓";
     setCheckInSuccess();
   } catch (error) {
     console.error("Check-in failed", error);
@@ -412,6 +465,20 @@ let checkInSeconds = 15 * 60;
 let checkInTimerInterval;
 let checkInExpiresAt = 0;
 
+function generateCheckInCode() {
+  const randomValue = new Uint32Array(1);
+  crypto.getRandomValues(randomValue);
+  return String(100000 + (randomValue[0] % 900000));
+}
+
+function setAdminCheckInCode(code) {
+  activeCheckInCode = code;
+  const normalized = String(code || "------").padStart(6, "-");
+  document.getElementById("adminCodeFirst").textContent = normalized.slice(0, 3);
+  document.getElementById("adminCodeLast").textContent = normalized.slice(3, 6);
+  document.getElementById("adminDisplayCode").setAttribute("aria-label", `Check-in code ${normalized}`);
+}
+
 function updateCheckInTimer() {
   if (checkInExpiresAt) checkInSeconds = Math.max(0, Math.ceil((checkInExpiresAt - Date.now()) / 1000));
   const minutes = Math.floor(checkInSeconds / 60).toString().padStart(2, "0");
@@ -419,7 +486,8 @@ function updateCheckInTimer() {
   document.getElementById("checkInTimer").textContent = `${minutes}:${seconds}`;
 }
 
-function showAdminCheckIn(expiresAt = Date.now() + 15 * 60 * 1000) {
+function showAdminCheckIn(expiresAt = Date.now() + 15 * 60 * 1000, code = activeCheckInCode || PREVIEW_CHECK_IN_CODE) {
+  setAdminCheckInCode(code);
   checkInExpiresAt = expiresAt;
   updateCheckInTimer();
   clearInterval(checkInTimerInterval);
@@ -431,22 +499,34 @@ function showAdminCheckIn(expiresAt = Date.now() + 15 * 60 * 1000) {
 }
 
 document.getElementById("adminOpenCheckIn").addEventListener("click", async () => {
-  const expiresAt = Date.now() + 15 * 60 * 1000;
   if (!currentFirebaseUser || !firebaseDb) {
-    showAdminCheckIn(expiresAt);
+    const previewCode = generateCheckInCode();
+    showAdminCheckIn(Date.now() + 15 * 60 * 1000, previewCode);
     showToast("Preview mode: the code display is open, but attendance is not saved.");
     return;
   }
   try {
-    await firebaseDb.collection("sessions").doc(SESSION_ID).set({
+    const sessionRef = firebaseDb.collection("sessions").doc(SESSION_ID);
+    const sessionSnapshot = await sessionRef.get();
+    const sessionData = sessionSnapshot.data();
+    const existingExpiry = sessionData?.expiresAt?.toMillis?.() || 0;
+    if (sessionData?.checkInOpen && existingExpiry > Date.now() && sessionData.code) {
+      showAdminCheckIn(existingExpiry, sessionData.code);
+      showToast("Showing the current check-in code. It has not changed.");
+      return;
+    }
+
+    const expiresAt = Date.now() + 15 * 60 * 1000;
+    const code = generateCheckInCode();
+    await sessionRef.set({
       title: "Fall 2026 Intro Meeting",
-      code: CHECK_IN_CODE,
+      code,
       checkInOpen: true,
       expiresAt: firebase.firestore.Timestamp.fromMillis(expiresAt),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-    showAdminCheckIn(expiresAt);
-    showToast("Check-in is open for 15 minutes.");
+    showAdminCheckIn(expiresAt, code);
+    showToast("A new six-digit code is open for 15 minutes.");
   } catch (error) {
     console.error("Could not open check-in", error);
     showToast("Could not open check-in. Confirm you are signed in with the admin account.");
@@ -456,11 +536,12 @@ document.getElementById("closeAdminCheckIn").addEventListener("click", () => adm
 adminCheckInDialog.addEventListener("click", (event) => { if (event.target === adminCheckInDialog) adminCheckInDialog.close(); });
 adminCheckInDialog.addEventListener("close", () => clearInterval(checkInTimerInterval));
 document.getElementById("copyCheckInCode").addEventListener("click", async () => {
+  if (!activeCheckInCode) { showToast("Open check-in before copying a code."); return; }
   try {
-    await navigator.clipboard.writeText(CHECK_IN_CODE);
-    showToast(`Check-in code copied: ${CHECK_IN_CODE}`);
+    await navigator.clipboard.writeText(activeCheckInCode);
+    showToast(`Check-in code copied: ${activeCheckInCode}`);
   } catch {
-    showToast(`Check-in code: ${CHECK_IN_CODE}`);
+    showToast(`Check-in code: ${activeCheckInCode}`);
   }
 });
 document.getElementById("endCheckIn").addEventListener("click", async () => {
@@ -477,12 +558,50 @@ document.getElementById("endCheckIn").addEventListener("click", async () => {
     }
   }
   clearInterval(checkInTimerInterval);
+  setAdminCheckInCode("");
   adminCheckInDialog.close();
   showToast(`Check-in closed. ${liveAttendanceCount} student${liveAttendanceCount === 1 ? "" : "s"} checked in.`);
 });
 
-document.querySelectorAll(".admin-actions button, .prep-strip a").forEach((button) => button.addEventListener("click", (event) => {
-  if (button.matches("a") && button.getAttribute("href") !== "#") return;
+document.getElementById("copyAcademyLink").addEventListener("click", async () => {
+  const academyUrl = "https://neurotech-academy-1c5d3.web.app/";
+  try {
+    await navigator.clipboard.writeText(academyUrl);
+    showToast("Learner website copied.");
+  } catch {
+    showToast(academyUrl);
+  }
+});
+
+document.getElementById("exportAttendance").addEventListener("click", () => {
+  if (!adminAttendanceRecords.length) {
+    showToast("There are no Session 01 attendance records to export yet.");
+    return;
+  }
+  const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const rows = [["Name", "Email", "Session", "Points", "Checked in at"]];
+  adminAttendanceRecords.forEach((record) => {
+    const millis = record.checkedInAt?.toMillis?.() || 0;
+    rows.push([
+      record.name || "",
+      record.email || "",
+      record.sessionTitle || record.sessionId || "",
+      Number(record.points || 0),
+      millis ? new Date(millis).toISOString() : ""
+    ]);
+  });
+  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "neurotech-session-01-attendance.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast("Attendance CSV downloaded.");
+});
+
+document.querySelectorAll(".prep-strip a").forEach((button) => button.addEventListener("click", (event) => {
+  if (button.getAttribute("href") !== "#") return;
   event.preventDefault();
   showToast("Link placeholder — connect your Google Drive URL here.");
 }));

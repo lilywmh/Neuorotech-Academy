@@ -18,24 +18,28 @@ service cloud.firestore {
 
     match /attendance/{attendanceId} {
       allow get: if signedIn()
-        && (attendanceId == "session01_" + request.auth.uid || isAdmin());
-      allow list: if isAdmin();
+        && (attendanceId == "session01_" + request.auth.uid
+          || resource.data.uid == request.auth.uid
+          || isAdmin());
+      allow list: if signedIn()
+        && (resource.data.uid == request.auth.uid || isAdmin());
 
-      allow create: if signedIn()
-        && attendanceId == "session01_" + request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          "uid", "email", "name", "sessionId", "sessionTitle",
-          "points", "checkInCode", "checkedInAt"
-        ])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.sessionId == "session01"
-        && request.resource.data.sessionTitle == "Fall 2026 Intro Meeting"
-        && request.resource.data.points == 2
-        && request.resource.data.checkInCode == get(/databases/$(database)/documents/sessions/session01).data.code
-        && get(/databases/$(database)/documents/sessions/session01).data.checkInOpen == true
-        && get(/databases/$(database)/documents/sessions/session01).data.expiresAt > request.time
-        && request.resource.data.checkedInAt == request.time;
+      allow create: if isAdmin()
+        || (signedIn()
+          && attendanceId == "session01_" + request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            "uid", "email", "name", "sessionId", "sessionTitle",
+            "points", "checkInCode", "checkedInAt"
+          ])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.sessionId == "session01"
+          && request.resource.data.sessionTitle == "Fall 2026 Intro Meeting"
+          && request.resource.data.points == 2
+          && request.resource.data.checkInCode == get(/databases/$(database)/documents/sessions/session01).data.code
+          && get(/databases/$(database)/documents/sessions/session01).data.checkInOpen == true
+          && get(/databases/$(database)/documents/sessions/session01).data.expiresAt > request.time
+          && request.resource.data.checkedInAt == request.time);
 
       allow update, delete: if isAdmin();
     }

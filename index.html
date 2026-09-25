@@ -360,22 +360,28 @@
       <section class="page" id="me-page" aria-labelledby="me-title">
         <div class="profile-hero">
           <div class="large-avatar">MC</div>
-          <div><p class="kicker">MY PROGRESS</p><h1 id="me-title"><span id="meDisplayName">Meihui Chen</span></h1><p>See your attendance, completed work, and project readiness.</p></div>
+          <div><p class="kicker">MY NEUROTECH PATH</p><h1 id="me-title"><span id="meDisplayName">Meihui Chen</span></h1><p>Collect private badges as you show up, learn, and contribute. This is encouragement—not a public ranking.</p></div>
         </div>
         <div class="me-grid">
-          <article class="readiness-panel">
-            <p class="panel-label">PROJECT READINESS</p>
-            <div class="readiness-top"><strong>Getting started</strong><span>Your progress will appear here after today’s session.</span></div>
-            <div class="readiness-bars">
-              <div><span><b>Reliability</b><small id="meAttendanceText">0 of 0 sessions</small></span><i><em id="meAttendanceBar" style="width:0%"></em></i></div>
-              <div><span><b>Core checkpoints</b><small>0 of 6 complete</small></span><i><em style="width:0%"></em></i></div>
-              <div><span><b>Team contribution</b><small>No contributions yet</small></span><i><em style="width:0%"></em></i></div>
+          <article class="badge-panel">
+            <p class="panel-label">CURRENT BADGE</p>
+            <div class="badge-showcase">
+              <div class="badge-emblem" id="badgeEmblem"><img src="assets/neurotech-usc-logo.png" alt="" /><span id="badgeTier">STARTER</span></div>
+              <div class="badge-copy"><small>YOUR SIGNAL LEVEL</small><h2 id="badgeName">Signal Detected</h2><p id="badgeMessage">Your first Neurotech@USC activity starts the signal.</p></div>
             </div>
-            <p class="readiness-note">These signals help the team understand your preparation. They are not a public ranking.</p>
+            <div class="badge-path" aria-label="Badge path">
+              <div class="active" data-badge-step="0"><i>01</i><span>Signal<br />Detected</span></div>
+              <div data-badge-step="1"><i>02</i><span>Signal<br />Scout</span></div>
+              <div data-badge-step="2"><i>03</i><span>Synapse<br />Builder</span></div>
+              <div data-badge-step="3"><i>04</i><span>BCI<br />Pioneer</span></div>
+            </div>
+            <div class="badge-next"><span id="badgeNextText">Earn 4 more points to reach Signal Scout.</span><i><em id="badgeProgressBar" style="width:0%"></em></i></div>
+            <p class="readiness-note">Only you and Academy admins can see your points. Badges celebrate participation; they do not guarantee project placement.</p>
           </article>
           <article class="points-panel">
             <p class="panel-label">PARTICIPATION</p>
             <div class="big-number"><b id="mePoints">00</b> <span>points</span></div>
+            <div class="participation-mini"><span><b id="meSessionCount">0</b><small>sessions</small></span><span><b id="meActivityCount">0</b><small>activities</small></span></div>
             <ul id="pointsHistory">
               <li><span>Check in to Session 01 today</span><strong>+2</strong></li>
             </ul>
@@ -401,11 +407,12 @@
             <div class="roster-list" id="rosterList"><p class="empty-state">Check-in has not opened yet.</p></div>
           </article>
           <article class="admin-actions">
-            <p class="panel-label">QUICK ACTIONS</p>
-            <button><span>＋</span><div><strong>Add a session</strong><small>Create materials and checkpoints</small></div></button>
-            <button><span>↗</span><div><strong>Post an announcement</strong><small>Copy an update for Slack</small></div></button>
-            <button><span>✓</span><div><strong>Review submissions</strong><small>Open the linked Google Sheet</small></div></button>
-            <button><span>↓</span><div><strong>Export records</strong><small>Download participation as CSV</small></div></button>
+            <p class="panel-label">ADMIN WORKFLOW</p>
+            <button id="createSessionAction" disabled><span>＋</span><div><strong>Create the next session</strong><small>Coming next: title, date, points, slides, and publish controls</small></div><b>PLANNED</b></button>
+            <button id="importPointsAction" disabled><span>⇅</span><div><strong>Import participation points</strong><small>Coming next: map a Google Form response sheet into member points</small></div><b>PLANNED</b></button>
+            <button id="copyAcademyLink"><span>↗</span><div><strong>Copy learner website</strong><small>Share the Academy login link in Slack or on a slide</small></div></button>
+            <button id="exportAttendance"><span>↓</span><div><strong>Export this attendance</strong><small>Download the current Session 01 check-in list as CSV</small></div></button>
+            <p class="admin-workflow-note">Google Drive is only where your slides and Forms live. The Academy website stores sessions, check-ins, and point records in Firestore.</p>
           </article>
         </div>
       </section>
@@ -446,9 +453,9 @@
         <div class="checkin-live-label"><i></i> CHECK-IN OPEN</div>
         <p class="admin-session-label">NEUROTECH@USC ACADEMY · SESSION 01</p>
         <h2>Enter this code</h2>
-        <div class="display-code" aria-label="Check-in code 092426"><span>092</span><i></i><span>426</span></div>
+        <div class="display-code" id="adminDisplayCode" aria-label="Check-in code"><span id="adminCodeFirst">---</span><i></i><span id="adminCodeLast">---</span></div>
         <p class="display-instruction">Open the Academy website, tap <strong>Check in to session</strong>, and enter the code.</p>
-        <div class="display-url">neurotech.academy/check-in</div>
+        <div class="display-url">neurotech-academy-1c5d3.web.app</div>
       </div>
       <aside class="admin-checkin-side">
         <div class="checkin-side-top">
