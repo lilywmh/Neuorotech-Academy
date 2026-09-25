@@ -1,6 +1,7 @@
+const ACADEMY_TIME_ZONE = "America/Los_Angeles";
 const sessions = [
-  { id: "session01", n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", state: "past", date: "Sep 24", time: "7:00 PM", startsAt: "2026-09-24T19:00:00-07:00", endsAt: "2026-09-24T19:50:00-07:00" },
-  { id: "session02", n: "02", title: "Where Signals Come From", desc: "Build a practical map from neurons and electrodes to the signals we can actually measure.", state: "upcoming", date: "Oct 01", time: "7:00 PM", startsAt: "2026-10-01T19:00:00-07:00", endsAt: "2026-10-01T19:50:00-07:00" },
+  { id: "session01", n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", state: "past", date: "Sep 24", time: "7:00 PM", year: 2026, timeZone: ACADEMY_TIME_ZONE, startsAt: "2026-09-24T19:00:00-07:00", endsAt: "2026-09-24T19:50:00-07:00" },
+  { id: "session02", n: "02", title: "Where Signals Come From", desc: "Build a practical map from neurons and electrodes to the signals we can actually measure.", state: "upcoming", date: "Oct 01", time: "7:00 PM", year: 2026, timeZone: ACADEMY_TIME_ZONE, startsAt: "2026-10-01T19:00:00-07:00", endsAt: "2026-10-01T19:50:00-07:00" },
 ];
 
 const resources = [
@@ -34,11 +35,19 @@ const SESSION_ID = "session02";
 const SESSION_TITLE = "Where Signals Come From";
 const DEFAULT_SESSION_STATES = { session01: "past", session02: "upcoming" };
 let sessionStates = { ...DEFAULT_SESSION_STATES };
+let sessionStateUpdatedAt = {};
 let sessionClockTimer = null;
 
 function getEffectiveSessionState(session, requestedState = sessionStates[session.id], now = Date.now()) {
-  if (requestedState === "draft" || requestedState === "past") return requestedState;
-  return new Date(session.endsAt).getTime() <= now ? "past" : requestedState;
+  const startsAt = new Date(session.startsAt).getTime();
+  const endsAt = new Date(session.endsAt).getTime();
+  if (requestedState === "draft") return "draft";
+  if (now >= endsAt) return "past";
+  if (requestedState === "past") {
+    const changedAt = Number(sessionStateUpdatedAt[session.id] || 0);
+    return now >= startsAt && changedAt >= startsAt ? "past" : "upcoming";
+  }
+  return requestedState;
 }
 
 function scheduleSessionClockRefresh() {
@@ -254,9 +263,12 @@ function renderSessionStates() {
       managerCard.classList.toggle("featured", state === "upcoming");
       managerCard.querySelectorAll("[data-set-session]").forEach((button) => {
         const isSelected = button.dataset.state === state;
+        const isUnavailable = button.dataset.state === "past" && Date.now() < new Date(session.startsAt).getTime();
         button.classList.toggle("is-selected", isSelected);
+        button.classList.toggle("is-unavailable", isUnavailable);
         button.setAttribute("aria-pressed", String(isSelected));
-        button.disabled = isSelected;
+        button.disabled = isSelected || isUnavailable;
+        button.title = isUnavailable ? `Available after this session begins (${session.time}, Los Angeles time).` : "";
       });
       const visibility = managerCard.querySelector(".manager-visibility b");
       if (visibility) visibility.textContent = {
@@ -487,7 +499,9 @@ function startLiveData(role, user) {
   unsubscribeAcademyConfig = null;
 
   unsubscribeAcademyConfig = firebaseDb.collection("academyConfig").doc("current").onSnapshot((snapshot) => {
-    sessionStates = { ...DEFAULT_SESSION_STATES, ...(snapshot.data()?.sessionStates || {}) };
+    const config = snapshot.data() || {};
+    sessionStates = { ...DEFAULT_SESSION_STATES, ...(config.sessionStates || {}) };
+    sessionStateUpdatedAt = { ...(config.sessionStateUpdatedAt || {}) };
     renderSessionStates();
   }, (error) => {
     console.error("Could not load Academy session states", error);
@@ -535,6 +549,7 @@ document.getElementById("adminSessionManager").addEventListener("click", async (
   const sessionId = button.dataset.setSession;
   const nextState = button.dataset.state;
   const nextStates = { ...sessionStates };
+  const nextStateUpdatedAt = { ...sessionStateUpdatedAt, [sessionId]: Date.now() };
   if (nextState === "upcoming") {
     Object.keys(nextStates).forEach((id) => {
       if (nextStates[id] === "upcoming") nextStates[id] = "published";
@@ -549,12 +564,15 @@ document.getElementById("adminSessionManager").addEventListener("click", async (
   };
   if (!currentFirebaseUser || !firebaseDb) {
     sessionStates = nextStates;
+    sessionStateUpdatedAt = nextStateUpdatedAt;
     renderSessionStates();
     setManagerStatus(`Preview: Session ${session.n} is now ${nextState}.`, "saved");
     return;
   }
   const previousStates = { ...sessionStates };
+  const previousStateUpdatedAt = { ...sessionStateUpdatedAt };
   sessionStates = nextStates;
+  sessionStateUpdatedAt = nextStateUpdatedAt;
   renderSessionStates();
   button.disabled = true;
   button.classList.add("is-saving");
@@ -563,6 +581,7 @@ document.getElementById("adminSessionManager").addEventListener("click", async (
     const batch = firebaseDb.batch();
     batch.set(firebaseDb.collection("academyConfig").doc("current"), {
       sessionStates: nextStates,
+      sessionStateUpdatedAt: nextStateUpdatedAt,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentFirebaseUser.email || "admin"
     }, { merge: true });
@@ -578,6 +597,7 @@ document.getElementById("adminSessionManager").addEventListener("click", async (
   } catch (error) {
     console.error("Could not update session status", error);
     sessionStates = previousStates;
+    sessionStateUpdatedAt = previousStateUpdatedAt;
     renderSessionStates();
     setManagerStatus("Could not save. Confirm you are signed in with the admin account.", "error");
   } finally {

@@ -254,6 +254,7 @@ body::before { opacity: .28; background-size: 56px 56px; }
 .manager-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin: 0; }
 .manager-actions button { position: relative; min-height: 36px; padding: 0 12px; border: 1px solid #cad9df; border-radius: 9px; color: #3e5360; background: rgba(255,255,255,.9); font-size: 11px; font-weight: 800; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease; }
 .manager-actions button:hover:not(:disabled) { color: var(--ink); border-color: #8fa8b3; background: #edf6f8; transform: translateY(-1px); }
+.manager-actions button.is-unavailable { color: #9aa9b0; border-style: dashed; background: #f3f6f7; cursor: not-allowed; opacity: .72; }
 .manager-actions button.is-selected { padding-left: 27px; color: white; border-color: var(--ink); background: var(--ink); box-shadow: 0 5px 13px rgba(20,53,70,.16); cursor: default; opacity: 1; }
 .manager-actions button.is-selected::before { content: "✓"; position: absolute; left: 10px; font-size: 11px; }
 .manager-actions button.is-selected[data-state="published"] { border-color: var(--acid); background: var(--acid); }
