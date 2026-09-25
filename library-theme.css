@@ -1,13 +1,13 @@
 /* Quiet library theme: readable, educational, and deliberately restrained. */
 :root {
-  --ink: #183447;
-  --ink-soft: #536b79;
-  --paper: #f6f4ee;
-  --paper-deep: #ece9df;
-  --acid: #367fba;
-  --mint: #55b8ce;
-  --orange: #c9534e;
-  --success: #4f9f68;
+  --ink: #14364a;
+  --ink-soft: #526e7d;
+  --paper: #f5fbff;
+  --paper-deep: #e9f6fb;
+  --acid: #2f83d0;
+  --mint: #50c6dc;
+  --orange: #f25f5c;
+  --success: #56b96b;
   --line: rgba(24, 52, 71, .14);
   --serif: "Source Serif 4", Georgia, serif;
   --sans: "Lato", "Helvetica Neue", sans-serif;
@@ -23,8 +23,9 @@ html { background: var(--paper); }
 body {
   color: var(--ink);
   background:
-    radial-gradient(circle at 92% 7%, rgba(85,184,206,.1), transparent 30rem),
-    linear-gradient(180deg, #f8f7f2 0%, #f3f2ed 100%);
+    radial-gradient(circle at 92% 7%, rgba(80,198,220,.16), transparent 30rem),
+    radial-gradient(circle at 2% 42%, rgba(242,95,92,.055), transparent 24rem),
+    linear-gradient(180deg, #fbfdff 0%, #f2f9fc 100%);
   font-family: var(--sans);
   font-size: 17px;
   line-height: 1.65;
@@ -39,7 +40,7 @@ body::before { opacity: .28; background-size: 56px 56px; }
   padding: 0 clamp(22px, 4.5vw, 68px);
   color: white;
   border-bottom: 1px solid rgba(255,255,255,.1);
-  background: rgba(12, 39, 54, .96);
+  background: rgba(14, 53, 72, .97);
   box-shadow: 0 10px 30px rgba(12,39,54,.14);
   backdrop-filter: blur(18px);
 }
@@ -63,6 +64,9 @@ body::before { opacity: .28; background-size: 56px 56px; }
 .profile-label { color: white; font-size: 13px; }
 .profile-label small { color: #aac0cb; font-size: 11px; }
 .profile-button svg { stroke: #aac0cb; }
+.profile-menu { color: var(--ink); border-color: #d9e7ee; background: rgba(255,255,255,.98); box-shadow: 0 18px 48px rgba(14,53,72,.18); }
+.profile-menu button { color: var(--ink); font-size: 14px; font-weight: 700; }
+.profile-menu button:hover { color: var(--acid); background: #edf8fc; }
 
 .page { max-width: 1380px; padding: clamp(56px, 6vw, 92px) clamp(24px, 5vw, 72px) 110px; }
 .eyebrow, .kicker, .panel-label, .content-label { font-family: var(--sans); font-size: 12px; font-weight: 900; letter-spacing: .12em; }
@@ -103,6 +107,8 @@ body::before { opacity: .28; background-size: 56px 56px; }
   backdrop-filter: blur(14px);
 }
 .next-card, .progress-card { padding: 32px; }
+.next-card { box-shadow: inset 0 4px 0 rgba(242,95,92,.82), var(--shadow-soft); }
+.progress-card { box-shadow: inset 0 4px 0 rgba(80,198,220,.9), var(--shadow-soft); }
 .section-heading h2, .lesson-summary h3, .journey-heading h2, .contact-heading h2, .reach-card h3, .resource-card h3 {
   font-family: var(--serif);
   font-weight: 600;
@@ -149,15 +155,42 @@ body::before { opacity: .28; background-size: 56px 56px; }
 .journey-stop.complete i { background: var(--success); }
 .journey-stop.current i { color: white; background: var(--acid); }
 
-.contact-section { margin-top: 88px; padding-top: 48px; }
+.contact-section { margin-top: 74px; padding-top: 38px; }
+.contact-heading > div { display: grid; grid-template-columns: 34px 1fr; align-items: center; column-gap: 12px; }
+.contact-heading .section-number { display: grid; grid-row: 1; margin: 0; color: white; background: var(--orange); }
+.contact-heading .kicker { grid-column: 2; margin: 0; color: var(--orange); }
+.contact-heading h2 { grid-column: 1 / -1; margin-top: 12px; }
 .contact-heading h2 { font-size: clamp(40px, 4.6vw, 66px); }
 .contact-heading > p, .reach-card > p, .contact-note { font-size: 15px; }
-.contact-person { font-size: 14px; }
+.contact-grid { gap: 16px; margin-top: 28px; }
+.team-directory, .reach-card { min-height: 300px; padding: 22px; }
+.contact-person { min-height: 62px; margin-top: 5px; padding: 11px 12px; border: 1px solid #dce9ef; font-size: 14px; background: #f7fcff; }
+.contact-person > span { background: linear-gradient(145deg, #43a3df, #2f7fbe); }
+.contact-person div { gap: 1px; }
+.contact-person small { font-size: 8px; }
+.contact-person strong { font-size: 19px; }
+.contact-person > b { font-size: 10px; }
+.contact-note { margin: 13px 0 0; }
+.contact-note a { display: inline-flex; padding: 7px 10px; border-radius: 8px; color: var(--acid); background: #e9f6fc; font-size: 12px; font-weight: 700; text-decoration: none; }
 .reach-card.social { background: #102f40; }
 .social-actions a { font-size: 14px; }
+.team-directory { background: rgba(247,252,255,.94); }
+.reach-card.email { background: rgba(255,247,244,.94); }
 
 .page-intro h1 { font-size: clamp(58px, 7vw, 94px); }
 .page-intro p:last-child { font-size: 18px; }
+.resource-card:not(.featured):nth-child(3n + 2) { background: rgba(239,250,255,.94); }
+.resource-card:not(.featured):nth-child(3n) { background: rgba(255,247,244,.94); }
+.library-toolbar { align-items: center; padding: 14px; border: 1px solid #dceaf0; border-radius: 16px; background: rgba(255,255,255,.7); box-shadow: var(--shadow-soft); }
+.search-box { width: min(470px, 100%); min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border: 1px solid #c9dce5; border-radius: 12px; background: white; box-shadow: 0 4px 14px rgba(20,54,74,.055); cursor: text; }
+.search-box:focus-within { border-color: var(--acid); box-shadow: 0 0 0 4px rgba(47,131,208,.11); }
+.search-box > span { width: 21px; height: 21px; display: grid; place-items: center; color: var(--acid); }
+.search-box svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.search-box input { padding: 0; color: var(--ink); font-size: 16px; }
+.search-box input::placeholder { color: #8195a1; }
+.filter-pills { padding: 3px; border-radius: 12px; background: #edf6fa; }
+.filter-pills button { min-height: 38px; padding: 0 13px; border: 0; border-radius: 9px; font-size: 11px; font-weight: 700; }
+.filter-pills button.active { background: var(--acid); box-shadow: 0 4px 12px rgba(47,131,208,.2); }
 .session-row { grid-template-columns: 70px 1fr 205px 100px; }
 .session-row h3 { font-family: var(--serif); font-size: 28px; font-weight: 600; }
 .session-row p { font-size: 15px; }
@@ -215,6 +248,8 @@ body::before { opacity: .28; background-size: 56px 56px; }
   body { font-size: 16px; }
   .topbar { height: 70px; }
   .brand-logo { width: 43px; height: 43px; flex-basis: 43px; }
+  .profile-menu { top: 64px; right: 12px; width: min(270px, calc(100vw - 24px)); padding: 8px; border-radius: 14px; }
+  .profile-menu button { min-height: 46px; padding: 10px 13px; }
   .page { padding: 42px 18px 90px; }
   .hero-copy h1, .page-intro h1 { font-size: 52px; }
   .hero-subtitle { font-size: 18px; }
@@ -229,6 +264,17 @@ body::before { opacity: .28; background-size: 56px 56px; }
   .prep-link { display: none; }
   .activity-rings { width: 215px; height: 215px; }
   .journey-heading { gap: 12px; }
+  .contact-section { margin-top: 54px; padding-top: 30px; }
+  .contact-heading { gap: 14px; }
+  .contact-heading h2 { font-size: 43px; }
+  .contact-grid { margin-top: 22px; }
+  .team-directory, .reach-card { min-height: 0; padding: 18px; }
+  .contact-person { grid-template-columns: 38px minmax(0, 1fr) auto; min-height: 58px; padding: 9px; }
+  .contact-note { margin-top: 10px; }
+  .library-toolbar { gap: 12px; padding: 10px; }
+  .search-box { width: 100%; min-height: 50px; }
+  .filter-pills { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .filter-pills button { flex: 0 0 auto; }
   .profile-hero h1, .admin-header h1 { font-size: 40px; }
   .session-manager { padding: 20px; }
   .manager-heading h2 { font-size: 28px; }

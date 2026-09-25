@@ -1,5 +1,5 @@
 const sessions = [
-  { id: "session01", n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", state: "past", date: "Sep 24", time: "6:00 PM" },
+  { id: "session01", n: "01", title: "Fall 2026 Intro Meeting", desc: "Meet the team, learn how the Academy works, and use a real EEG example to move from signal to evidence.", state: "past", date: "Sep 24", time: "7:00 PM" },
   { id: "session02", n: "02", title: "Where Signals Come From", desc: "Build a practical map from neurons and electrodes to the signals we can actually measure.", state: "upcoming", date: "Oct 01", time: "7:00 PM" },
 ];
 
