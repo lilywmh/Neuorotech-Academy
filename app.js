@@ -182,7 +182,29 @@ function setAuthError(message = "") {
   authError.hidden = !message;
 }
 
+function getAuthErrorMessage(error = {}) {
+  const messages = {
+    "auth/operation-not-allowed": "Google sign-in has not been enabled yet. Please contact an Academy organizer.",
+    "auth/unauthorized-domain": "This website is not authorized for Google sign-in yet. Please contact an Academy organizer.",
+    "auth/popup-blocked": "Your browser blocked the Google sign-in window.",
+    "auth/popup-closed-by-user": "The Google sign-in window was closed before sign-in finished.",
+    "auth/redirect-cancelled-by-user": "Google sign-in was cancelled. Please try again.",
+    "auth/redirect-operation-pending": "Google sign-in is already opening.",
+    "auth/network-request-failed": "Google sign-in could not connect. Check your internet connection and try again."
+  };
+  return messages[error.code] || "Google sign-in did not finish. Please try again.";
+}
+
+function setGoogleSignInBusy(isBusy, label = "Continue with Google") {
+  const button = document.getElementById("googleSignIn");
+  const buttonLabel = document.getElementById("googleSignInLabel");
+  button.disabled = isBusy;
+  button.setAttribute("aria-busy", String(isBusy));
+  buttonLabel.textContent = label;
+}
+
 function completeSignIn(role, destination = role === "admin" ? "admin" : "home", user = null, persistDemo = false) {
+  setGoogleSignInBusy(false);
   currentUserRole = role;
   document.body.classList.toggle("admin-user", role === "admin");
   if (persistDemo) localStorage.setItem("neurotech-auth-demo", role);
@@ -274,6 +296,7 @@ function showSignedOut() {
   document.getElementById("roleViewSwitch").hidden = true;
   document.getElementById("profileProgressButton").hidden = false;
   profileMenu.classList.remove("open");
+  setGoogleSignInBusy(false);
   history.replaceState(null, "", "#home");
 }
 
@@ -285,6 +308,12 @@ function initializeFirebaseAuth(destination = "home") {
   if (!firebase.apps.length) firebase.initializeApp(window.NEUROTECH_FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.firestore();
+  if (location.protocol !== "file:") {
+    firebaseAuth.getRedirectResult().catch((error) => {
+      setGoogleSignInBusy(false);
+      setAuthError(getAuthErrorMessage(error));
+    });
+  }
   firebaseAuth.onAuthStateChanged((user) => {
     if (!user) { if (!localStorage.getItem("neurotech-auth-demo")) showSignedOut(); return; }
     localStorage.removeItem("neurotech-auth-demo");
@@ -311,16 +340,26 @@ document.getElementById("googleSignIn").addEventListener("click", async () => {
   }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
+  const shouldRedirect = window.matchMedia("(max-width: 700px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   try {
+    setGoogleSignInBusy(true, shouldRedirect ? "Opening Google sign-in…" : "Signing in…");
+    if (shouldRedirect) {
+      await firebaseAuth.signInWithRedirect(provider);
+      return;
+    }
     await firebaseAuth.signInWithPopup(provider);
   } catch (error) {
-    const messages = {
-      "auth/operation-not-allowed": "Enable Google under Firebase Authentication → Sign-in method.",
-      "auth/unauthorized-domain": "Add this website domain under Firebase Authentication → Authorized domains.",
-      "auth/popup-blocked": "Your browser blocked the Google sign-in window. Allow popups and try again.",
-      "auth/popup-closed-by-user": "The Google sign-in window was closed before sign-in finished."
-    };
-    setAuthError(messages[error.code] || `Google sign-in failed: ${error.message}`);
+    if (error.code === "auth/popup-blocked") {
+      setGoogleSignInBusy(true, "Opening Google sign-in…");
+      try {
+        await firebaseAuth.signInWithRedirect(provider);
+        return;
+      } catch (redirectError) {
+        error = redirectError;
+      }
+    }
+    setGoogleSignInBusy(false);
+    setAuthError(getAuthErrorMessage(error));
   }
 });
 document.getElementById("previewStudent").addEventListener("click", () => completeSignIn("student", "home", null, true));
@@ -600,7 +639,7 @@ function renderLearnerProgress(input) {
       : [];
   learnerRecords = records;
   hasCheckedIn = records.some((record) => record.sessionId === activeSessionId);
-  const points = records.reduce((total, record) => total + Number(record.points || 0), 0);
+  const points = Math.max(0, records.reduce((total, record) => total + Number(record.points || 0), 0));
   const sessionCount = new Set(records.filter((record) => String(record.sessionId || "").startsWith("session")).map((record) => record.sessionId)).size;
   const completedFraction = Math.min(sessionCount / 2, 1);
 
@@ -639,17 +678,17 @@ function renderLearnerProgress(input) {
 }
 
 const badgeCatalog = [
-  { name: "Human Brain", image: "human-brain.png", points: 0, field: "Foundations", info: "The brain coordinates perception, movement, memory, and behavior through networks of specialized regions." },
-  { name: "Neuron", image: "neuron.png", points: 2, field: "Foundations", info: "A neuron receives, processes, and sends information using electrical and chemical signals." },
-  { name: "EEG Headset", image: "eeg-headset.png", points: 4, field: "Sensing", info: "EEG records tiny voltage changes at the scalp to study the brain's electrical activity." },
-  { name: "Neural Implant Chip", image: "neural-implant-chip.png", points: 6, field: "Interfaces", info: "Implanted electrodes can record from or stimulate neural tissue with high spatial precision." },
-  { name: "Robotic Prosthetic Hand", image: "prosthetic-hand.png", points: 8, field: "Restoration", info: "Neural and muscle signals can help a prosthetic hand translate intent into movement." },
-  { name: "Brainwave Monitor", image: "brainwave-monitor.png", points: 10, field: "Signals", info: "A monitor turns neural recordings into traces that researchers can inspect and analyze." },
-  { name: "MRI Scanner", image: "mri-scanner.png", points: 12, field: "Imaging", info: "MRI uses magnetic fields and radio waves to create detailed images of brain anatomy." },
-  { name: "Brain Stimulation Coil", image: "brain-stimulation-coil.png", points: 15, field: "Stimulation", info: "A TMS coil uses changing magnetic fields to noninvasively influence cortical activity." },
-  { name: "VR Headset", image: "vr-headset.png", points: 18, field: "Immersion", info: "Virtual reality creates controlled environments for research, training, and rehabilitation." },
-  { name: "Robotic Exoskeleton", image: "robotic-exoskeleton.png", points: 21, field: "Mobility", info: "A powered exoskeleton supports movement and can assist rehabilitation or mobility." },
-  { name: "Optical Neural Probe", image: "optical-neural-probe.png", points: 24, field: "Neurophotonics", info: "Optical probes use light to measure or influence neural activity in targeted tissue." },
+  { name: "Human Brain", image: "human-brain.png", points: 2, field: "Foundations", info: "The brain coordinates perception, movement, memory, and behavior through networks of specialized regions." },
+  { name: "Neuron", image: "neuron.png", points: 4, field: "Foundations", info: "A neuron receives, processes, and sends information using electrical and chemical signals." },
+  { name: "EEG Headset", image: "eeg-headset.png", points: 6, field: "Sensing", info: "EEG records tiny voltage changes at the scalp to study the brain's electrical activity." },
+  { name: "Neural Implant Chip", image: "neural-implant-chip.png", points: 8, field: "Interfaces", info: "Implanted electrodes can record from or stimulate neural tissue with high spatial precision." },
+  { name: "Robotic Prosthetic Hand", image: "prosthetic-hand.png", points: 10, field: "Restoration", info: "Neural and muscle signals can help a prosthetic hand translate intent into movement." },
+  { name: "Brainwave Monitor", image: "brainwave-monitor.png", points: 12, field: "Signals", info: "A monitor turns neural recordings into traces that researchers can inspect and analyze." },
+  { name: "MRI Scanner", image: "mri-scanner.png", points: 14, field: "Imaging", info: "MRI uses magnetic fields and radio waves to create detailed images of brain anatomy." },
+  { name: "Brain Stimulation Coil", image: "brain-stimulation-coil.png", points: 16, field: "Stimulation", info: "A TMS coil uses changing magnetic fields to noninvasively influence cortical activity." },
+  { name: "VR Headset", image: "vr-headset.png", points: 19, field: "Immersion", info: "Virtual reality creates controlled environments for research, training, and rehabilitation." },
+  { name: "Robotic Exoskeleton", image: "robotic-exoskeleton.png", points: 22, field: "Mobility", info: "A powered exoskeleton supports movement and can assist rehabilitation or mobility." },
+  { name: "Optical Neural Probe", image: "optical-neural-probe.png", points: 25, field: "Neurophotonics", info: "Optical probes use light to measure or influence neural activity in targeted tissue." },
   { name: "fNIRS Cap", image: "fnirs-cap.png", points: 28, field: "Hemodynamics", info: "fNIRS estimates cortical activity by tracking changes in oxygenated blood with near-infrared light." }
 ];
 

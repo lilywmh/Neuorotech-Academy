@@ -1,7 +1,9 @@
 // Firebase's web configuration identifies this public web app. It is not a secret.
 window.NEUROTECH_FIREBASE_CONFIG = {
   apiKey: "AIzaSyBgMDM7KO7zJH9fK6tCcvlQhDUNQW0KSvU",
-  authDomain: "neurotech-academy-1c5d3.firebaseapp.com",
+  // Keep redirect sign-in on the same Firebase Hosting domain so mobile
+  // browsers do not have to grant cross-site storage access.
+  authDomain: "neurotech-academy-1c5d3.web.app",
   projectId: "neurotech-academy-1c5d3",
   storageBucket: "neurotech-academy-1c5d3.firebasestorage.app",
   messagingSenderId: "662772816763",

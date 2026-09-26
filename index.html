@@ -38,7 +38,7 @@
           <p>Use the Google account connected to your membership.</p>
           <button class="google-button" id="googleSignIn">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.09-1.92 3.27-4.75 3.27-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.16v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.34-2.1V7.06H2.16A11 11 0 0 0 1 12c0 1.77.42 3.44 1.16 4.94l3.68-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.55 4.2 1.64l3.15-3.15A10.6 10.6 0 0 0 12 1a11 11 0 0 0-9.84 6.06L5.84 9.9C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
-            Continue with Google
+            <span id="googleSignInLabel">Continue with Google</span>
           </button>
           <p class="auth-error" id="authError" role="alert" hidden></p>
           <div class="auth-help"><span></span><small>Your role is assigned automatically after sign-in.</small><span></span></div>
@@ -298,16 +298,14 @@
             </section>
 
             <section class="content-section">
-              <div class="content-section-heading"><span>02</span><div><h2>Session plan</h2><p>50 minutes · group activities included</p></div></div>
+              <div class="content-section-heading"><span>02</span><div><h2>Session plan</h2><p>Topics and activities</p></div></div>
               <div class="agenda-list">
-                <div class="agenda-item"><time>0–5</time><div><strong>Welcome and check-in</strong><p>Settle in and enter the session code.</p></div><span>5 MIN</span></div>
-                <div class="agenda-item"><time>5–9</time><div><strong>Meet the team</strong><p>Lily Wu, Lily Hirasawa, and Jason Mo introduce the Academy.</p></div><span>4 MIN</span></div>
-                <div class="agenda-item feature"><time>9–16</time><div><strong>Icebreaker</strong><p>Name, major, and one everyday device you would control without using your hands.</p></div><span>7 MIN</span></div>
-                <div class="agenda-item"><time>16–23</time><div><strong>Participation points</strong><p>How activities earn points and how consistent participation supports project consideration.</p></div><span>7 MIN</span></div>
-                <div class="agenda-item feature"><time>23–38</time><div><strong>BCI 101: From Signal to Evidence</strong><p>Compare eyes-open and eyes-closed EEG, find the alpha pattern, and ask what the graph actually proves.</p></div><span>15 MIN</span></div>
-                <div class="agenda-item"><time>38–44</time><div><strong>Put the project in order</strong><p>Arrange data, observation, interpretation, alternative explanation, validation, and evidence.</p></div><span>6 MIN</span></div>
-                <div class="agenda-item"><time>44–48</time><div><strong>Roadmap and resources</strong><p>What to expect, Slack, mentorship, archive materials, and optional practice.</p></div><span>4 MIN</span></div>
-                <div class="agenda-item"><time>48–50</time><div><strong>Q&amp;A + group photo</strong><p>Final questions, announcements, and a quick group photo.</p></div><span>2 MIN</span></div>
+                <div class="agenda-item"><i>01</i><div><strong>Welcome and introductions</strong><p>Check in, meet the Academy team, and get comfortable with the room.</p></div></div>
+                <div class="agenda-item feature"><i>02</i><div><strong>Icebreaker</strong><p>Name, major, and one everyday device you would control without using your hands.</p></div></div>
+                <div class="agenda-item"><i>03</i><div><strong>How the Academy works</strong><p>Participation points, semester roadmap, resources, and project consideration.</p></div></div>
+                <div class="agenda-item feature"><i>04</i><div><strong>BCI 101: From Signal to Evidence</strong><p>Compare eyes-open and eyes-closed EEG and ask what the graph actually proves.</p></div></div>
+                <div class="agenda-item"><i>05</i><div><strong>Evidence activity</strong><p>Put data, observation, interpretation, alternative explanations, and validation in order.</p></div></div>
+                <div class="agenda-item"><i>06</i><div><strong>Wrap-up and resources</strong><p>Slack, mentorship, archive materials, optional practice, and final questions.</p></div></div>
               </div>
             </section>
 
@@ -381,9 +379,9 @@
         </div>
         <div class="codex-overview">
           <article class="collection-card">
-            <div><p class="panel-label">MY COLLECTION</p><strong><span id="badgeCollectedCount">1</span><small>/12 badges</small></strong></div>
-            <div class="collection-next"><span>Next discovery</span><b id="badgeNextName">Neuron</b><p id="badgeNextText">Earn 2 points to unlock it.</p></div>
-            <div class="collection-track" aria-label="Badge collection progress"><i id="badgeCollectionBar" style="width:8.33%"></i></div>
+            <div><p class="panel-label">MY COLLECTION</p><strong><span id="badgeCollectedCount">0</span><small>/12 badges</small></strong></div>
+            <div class="collection-next"><span>Next discovery</span><b id="badgeNextName">Human Brain</b><p id="badgeNextText">Earn 2 points to unlock it.</p></div>
+            <div class="collection-track" aria-label="Badge collection progress"><i id="badgeCollectionBar" style="width:0%"></i></div>
           </article>
           <article class="points-panel codex-points">
             <div><p class="panel-label">DISCOVERY POINTS</p><div class="big-number"><b id="mePoints">00</b><span>pts</span></div></div>

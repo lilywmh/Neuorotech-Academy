@@ -830,10 +830,10 @@ body::before { opacity: .28; background-size: 56px 56px; }
     overflow-y: auto;
   }
   .auth-visual { display: none; }
-  .auth-panel { width: 100%; display: block; padding: 0; }
+  .auth-panel { width: min(400px, calc(100vw - 40px)); min-width: 0; display: block; padding: 0; }
   .auth-card {
     width: 100%;
-    max-width: 400px;
+    max-width: none;
     margin: 0 auto;
     padding: 34px 24px 26px;
     border: 1px solid rgba(20,54,74,.1);
@@ -1057,3 +1057,23 @@ body::before { opacity: .28; background-size: 56px 56px; }
   .reach-card.email .contact-action { min-height: 62px; padding-inline: 14px; }
   .reach-card.email .contact-action span { font-size: 11px; }
 }
+
+/* Session topics are intentionally untimed: the instructor can pace the room. */
+.agenda-item { grid-template-columns: 42px minmax(0, 1fr); gap: 16px; align-items: start; }
+.agenda-item > i {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: var(--ink);
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+.agenda-item.feature > i { background: var(--acid); }
+
+.google-button:disabled { opacity: .72; cursor: wait; transform: none; }
+.google-button > span { display: inline-block; }
