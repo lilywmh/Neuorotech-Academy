@@ -1,28 +1,66 @@
-# Neurotech Academy Portal
+# Neurotech@USC Academy
 
-A responsive, zero-dependency prototype for the Neurotech Academy learner and admin experience.
+![stack](https://img.shields.io/badge/stack-HTML%20%2B%20Firebase-3b6ea8)
+![status](https://img.shields.io/badge/status-live%20Fall%202026-448361)
 
-## Preview
+**Live site: [neurotechacademy.web.app](https://neurotechacademy.web.app)**
 
-Open `index.html` directly in a browser, or run any static file server from this folder.
+The learning portal for the NeuroTech@USC Academy, a weekly one-hour session
+series that takes students from any major from neurotechnology basics to
+building their own projects: *from raw EEG to a BCI you can explain.* Each
+session comes with a worksheet, and the portal keeps the course plan, materials,
+and each member's progress in one place between sessions.
 
-## Included in this prototype
+![Learner home](docs/learner-home.png)
 
-- Learner home with the next session, preparation, progress, and eight-session journey
-- Syllabus with three acts and eight connected sessions
-- Searchable/filterable library for current, past, and external materials
-- Private participation and project-readiness page
-- Demo check-in flow (use code `241008`)
-- Admin dashboard and live check-in demonstration
-- Responsive mobile navigation
-- Sign-in screen with learner/admin role previews and persistent demo sessions
+## What's inside
 
-## Demo sign-in
+**For members**
+- **Home**: the next session, what to prepare, and your progress through the course
+- **Learn**: the course plan, organized as a connected sequence of sessions
+- **Library**: searchable and filterable materials, including current and past sessions and outside resources such as MNE tutorials and an EEG starter notebook
+- **Me**: your participation record and project readiness
+- Session check-in with a code shared in the room
 
-The sign-in screen includes learner and admin previews. These use local browser storage so the complete role-based flow can be tested without a backend. Google Authentication is connected to the `neurotech-academy-1c5d3` Firebase project and becomes available when the site is served over HTTP or deployed to Firebase Hosting.
+**For organizers**
+- An admin dashboard with a live check-in view and roster
+- Role-based access: organizers are recognized after Google sign-in
 
-Add lowercase organizer emails to `NEUROTECH_ADMIN_EMAILS` in `firebase-config.js` to grant the admin interface. Do not use this client-side list as the final authorization mechanism for Firestore data; production data access must also be protected by Firestore Security Rules.
+## Built with
 
-## Before launch
+Plain HTML, CSS, and JavaScript with no build step, plus Firebase for Google
+sign-in, data, and hosting.
 
-Replace placeholder resource links with Google Drive, Slides, Colab, and Form URLs. The current check-in and profile data are demo-only; connect them to Firebase Authentication and Firestore when the content structure is approved.
+| file | purpose |
+|---|---|
+| `index.html`, `app.js` | the portal |
+| `styles.css`, `library-theme.css` | styling |
+| `firebase-config.js` | Firebase project and organizer emails |
+| `firestore.rules` | database access rules |
+| `firebase.json` | hosting configuration |
+| `assets/` | logo and badge artwork |
+
+## Run locally
+
+Open `index.html` in a browser, or serve the folder with any static server:
+
+```bash
+python -m http.server 8000
+```
+
+Google sign-in needs the site to be served over HTTP (or deployed). Without it,
+use the **Enter as learner** or **Enter as admin** buttons on the sign-in screen
+to explore with demo data; they use local browser storage only. The demo
+check-in code is `241008`.
+
+## Configure and deploy
+
+1. Add organizer emails (lowercase) to `NEUROTECH_ADMIN_EMAILS` in `firebase-config.js`.
+2. Protect data with `firestore.rules`. The client-side email list only controls
+   which interface is shown; the rules are what actually restrict access.
+3. Replace placeholder resource links with your Google Drive, Slides, Colab, and Form URLs.
+4. Deploy with `firebase deploy --only hosting`.
+
+---
+
+Designed and built by Meihui (Lily) Wu, Director of Education, NeuroTech@USC.
